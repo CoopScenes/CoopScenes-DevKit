@@ -86,8 +86,6 @@ points_top_ts = frames[-1].lidar[Lidar.OS1_TOP].timestamp
 img_left = frames[-1].cameras[Camera.STEREO_LEFT].image
 img_left_ts = frames[-1].cameras[Camera.STEREO_LEFT].timestamp
 
-
-
 # Umwandlung in Sekunden (Dezimalnanosekunden / 1 Milliarde)
 points_top_ts_seconds = points_top_ts / Decimal(1e9)
 img_left_ts_seconds = img_left_ts / Decimal(1e9)

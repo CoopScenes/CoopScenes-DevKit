@@ -1,4 +1,4 @@
-# AMEISE Dataset
+# OPNV Dataset - Open public network for versatile data
 
 ![AmeiseLogo](https://raw.githubusercontent.com/MarcelVSHNS/ameise-dataset/main/docs/Ameise_logo.png) 
 
@@ -6,7 +6,7 @@ Dev-Kit for [Project AMEISE](https://ameise.wandelgesellschaft.de/) records:
 
 ## Description
 
-The ameise-dataset is a development kit for the AMEISE dataset. It provides functionalities to unpack AMEISE record 
+The OPNV-dataset is a development kit for the OPNV dataset. It provides functionalities to unpack AMEISE record 
 files and extract meta information and frames. The core functionality revolves around handling AMEISE record files 
 with the .4mse extension.
 
