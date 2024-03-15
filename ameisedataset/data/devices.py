@@ -128,21 +128,6 @@ class CameraInformation:
         self.extrinsic: Pose = Pose()   # Transformation to Top_Lidar
         self.stereo_transform: TransformationMtx = TransformationMtx()
 
-    def add_from_ros_cam_info(self, cam_info_msg):
-        """ Populate the CameraInformation attributes from a ROS (Roboter Operating System) camera info object.
-        Args:
-            cam_info_msg: ROS camera info msg.
-        """
-        self.shape = (cam_info_msg.width, cam_info_msg.height)
-        self.camera_mtx = np.array(cam_info_msg.K).reshape(3, 3)
-        self.distortion_mtx = np.array(cam_info_msg.D)
-        self.rectification_mtx = np.array(cam_info_msg.R).reshape(3, 3)
-        self.projection_mtx = np.array(cam_info_msg.P).reshape(3, 4)
-        self.region_of_interest = ROI(x_off=cam_info_msg.roi.x_offset,
-                                      y_off=cam_info_msg.roi.y_offset,
-                                      height=cam_info_msg.roi.height,
-                                      width=cam_info_msg.roi.width)
-
 
 class LidarInformation:
     """ Represents detailed information about a LiDAR sensor.
@@ -175,7 +160,20 @@ class LidarInformation:
         'itemsize': 48
     }
 
-    def __init__(self, name: str = "", dtype: str = "ouster"):
+    blickfeld_datatype_structure = {
+        'names': [
+            'x',            # x-coordinate of the point
+            'y',            # y-coordinate of the point
+            'z',            # z-coordinate of the point
+            'intensity',    # Intensity of the point
+            'point_id',
+        ],
+        'formats': ['<f4', '<f4', '<f4', '<u4', '<u4'],
+        'offsets': [0, 4, 8, 12, 16],
+        'itemsize': 20
+    }
+
+    def __init__(self, name: str = "", dtype: str = ""):
         """ Initialize a LidarInformation instance with a given name.
         Args:
             name (str): Name of the LiDAR sensor.
@@ -183,6 +181,10 @@ class LidarInformation:
         self.name: str = name
         if dtype == "ouster":
             dtype = LidarInformation.ouster_datatype_structure
+        elif dtype == "blickfeld":
+            dtype = LidarInformation.blickfeld_datatype_structure
+        else:
+            raise Exeption("Unrecognized dtype!")
         self.dtype = np.dtype(dtype)
         self.beam_altitude_angles = None
         self.beam_azimuth_angles = None
@@ -193,22 +195,6 @@ class LidarInformation:
         self.lidar_to_sensor_transform = None
         self.type = None
         self.extrinsic: Pose = Pose()
-
-    def add_from_json_lidar_info(self, laser_info_obj):
-        """ Populate the Ouster LidarInformation attributes from a ROS (Roboter Operating System) ouster std_string_msg
-        LiDAR info object.
-        Args:
-            laser_info_obj: json LiDAR info object.
-        """
-        data_dict = json.loads(laser_info_obj.data)
-        self.beam_altitude_angles = data_dict["beam_intrinsics"]["beam_altitude_angles"]
-        self.beam_azimuth_angles = data_dict["beam_intrinsics"]["beam_azimuth_angles"]
-        self.lidar_origin_to_beam_origin_mm = data_dict["beam_intrinsics"]["lidar_origin_to_beam_origin_mm"]
-        self.columns_per_frame = data_dict["lidar_data_format"]["columns_per_frame"]
-        self.pixels_per_column = data_dict["lidar_data_format"]["pixels_per_column"]
-        self.phase_lock_offset = data_dict["config_params"]["phase_lock_offset"]
-        self.lidar_to_sensor_transform = data_dict["lidar_intrinsics"]["lidar_to_sensor_transform"]
-        self.type = data_dict["sensor_info"]["prod_line"]
 
 
 class Pose:

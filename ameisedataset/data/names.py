@@ -37,10 +37,14 @@ class Camera(metaclass=InfoBaseClass):
         STEREO_RIGHT (int): Represents a stereo right camera.
         MONO_RIGHT (int): Represents a mono right camera.
     """
-    MONO_LEFT = 0
-    STEREO_LEFT = 1
-    STEREO_RIGHT = 2
-    MONO_RIGHT = 3
+    BACK_LEFT = 0
+    FRONT_LEFT = 1
+    STEREO_LEFT = 2
+    STEREO_RIGHT = 3
+    FRONT_RIGHT = 4
+    BACK_RIGHT = 5
+    TOWER_1 = 6     # TOWER_A
+    TOWER_2 = 7     # TOWER_B
 
 
 class Lidar(metaclass=InfoBaseClass):
@@ -53,11 +57,14 @@ class Lidar(metaclass=InfoBaseClass):
     OS0_LEFT = 0
     OS1_TOP = 1
     OS0_RIGHT = 2
+    BLICKFELD_1 = 3     # QUBE_A
+    BLICKFELD_2 = 4     # QUBE_B
 
 
 class IMU(metaclass=InfoBaseClass):
+    BUS = 0
 
-    OS0_LEFT_IMU = 0
-    OS1_TOP_IMU = 1
-    OS0_RIGHT_IMU = 2
 
+class GNSS(metaclass=InfoBaseClass):
+    BUS = 0
+    TOWER = 1
