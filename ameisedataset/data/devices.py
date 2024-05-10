@@ -1,12 +1,13 @@
 import dill
 import json
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import numpy as np
+from decimal import Decimal
 
-from ameisedataset.miscellaneous import compute_checksum, INT_LENGTH, NUM_CAMERAS, NUM_LIDAR
+from ameisedataset.data import Camera, Lidar, IMU, GNSS
 
 
-class Infos:
+class SensorInformation:
     """
     Represents a collection of metadata information about a dataset.
     Attributes:
@@ -84,180 +85,47 @@ class Infos:
         return chunk_info, info
 
 
-class GNSSInformation:
-    def __init__(self, name: str = ''):
-        self.name: str = name
-
-
-class CameraInformation:
-    """ Represents detailed information about a camera.
-    Attributes:
-        name (str): Name of the camera.
-        shape (Tuple[int, int]): Dimensions (width, height) of the camera's image.
-        camera_mtx: Camera matrix.
-        distortion_mtx: Distortion matrix.
-        rectification_mtx: Rectification matrix.
-        projection_mtx: Projection matrix.
-        region_of_interest: Region of interest in the camera's view.
-        camera_type (str): Type of the camera.
-        focal_length (int): Focal length of the camera in millimeters.
-        aperture (int): Aperture size of the camera.
-        exposure_time (int): Exposure time of the camera in milliseconds.
-    """
-    def __init__(self, name: str = ''):
-        """ Initialize a CameraInformation instance with the specified attributes.
-        Args:
-            name (str): Name of the camera.
-            camera_type (str): Type of the camera.
-            focal_length (int): Focal length of the camera.
-            aperture (int): Aperture size of the camera.
-            exposure_time (int): Exposure time of the camera.
-        """
-        self.name: str = name
-        self.shape: Tuple[int, int] = (0, 0)
-        self.distortion_type: str = ''
-        self.camera_mtx: np.array = np.array([])
-        self.distortion_mtx: np.array = np.array([])
-        self.rectification_mtx: np.array = np.array([])
-        self.projection_mtx: np.array = np.array([])
-        self.region_of_interest: ROI = ROI()
-        self.camera_type: str = ''
-        self.focal_length: int = 0
-        self.aperture: int = 0
-        self.exposure_time: int = 0
-        self.extrinsic: Pose = Pose()   # Transformation to Top_Lidar
-        self.stereo_transform: TransformationMtx = TransformationMtx()
-
-
-class LidarInformation:
-    """ Represents detailed information about a LiDAR sensor.
-    Attributes:
-        name (str): Name of the LiDAR sensor.
-        dtype: Data type of the LiDAR points.
-        beam_altitude_angles: Altitude angles of the LiDAR beams.
-        beam_azimuth_angles: Azimuth angles of the LiDAR beams.
-        lidar_origin_to_beam_origin_mm: Distance from the LiDAR origin to the origin of the beams.
-        columns_per_frame: Number of columns in each LiDAR frame.
-        pixels_per_column: Number of pixels in each LiDAR column.
-        phase_lock_offset: Phase lock offset of the LiDAR sensor.
-        lidar_to_sensor_transform: Transformation matrix from the LiDAR to the sensor.
-        type: Product line or type of the LiDAR sensor.
-    """
-    ouster_datatype_structure = {
-        'names': [
-            'x',            # x-coordinate of the point
-            'y',            # y-coordinate of the point
-            'z',            # z-coordinate of the point
-            'intensity',    # Intensity of the point
-            't',            # Time after the frame timestamp in ns
-            'reflectivity', # Reflectivity of the point
-            'ring',         # Ring number (for multi-beam LiDARs)
-            'ambient',      # Ambient light intensity
-            'range'         # Distance from the LiDAR sensor to the measured point (hypotenuse) in mm.
-        ],
-        'formats': ['<f4', '<f4', '<f4', '<f4', '<u4', '<u2', '<u2', '<u2', '<u4'],
-        'offsets': [0, 4, 8, 16, 20, 24, 26, 28, 32],
-        'itemsize': 48
-    }
-
-    blickfeld_datatype_structure = {
-        'names': [
-            'x',            # x-coordinate of the point
-            'y',            # y-coordinate of the point
-            'z',            # z-coordinate of the point
-            'intensity',    # Intensity of the point
-            'point_id',
-        ],
-        'formats': ['<f4', '<f4', '<f4', '<u4', '<u4'],
-        'offsets': [0, 4, 8, 12, 16],
-        'itemsize': 20
-    }
-
-    def __init__(self, name: str = "", dtype: str = ""):
-        """ Initialize a LidarInformation instance with a given name.
-        Args:
-            name (str): Name of the LiDAR sensor.
-        """
-        self.name: str = name
-        if dtype == "ouster":
-            dtype = LidarInformation.ouster_datatype_structure
-        elif dtype == "blickfeld":
-            dtype = LidarInformation.blickfeld_datatype_structure
-        else:
-            raise Exeption("Unrecognized dtype!")
-        self.dtype = np.dtype(dtype)
-        self.beam_altitude_angles = None
-        self.beam_azimuth_angles = None
-        self.lidar_origin_to_beam_origin_mm = None
-        self.columns_per_frame = None
-        self.pixels_per_column = None
-        self.phase_lock_offset = None
-        self.lidar_to_sensor_transform = None
-        self.type = None
-        self.extrinsic: Pose = Pose()
-
-
-class Pose:
-    """
-    Describes the position of a sensor in terms of its position and rotation relative to
-    the reference coordinate system (Top_LiDAR).
-    Attributes:
-        xyz (np.array): A 1x3 array representing the position of the sensor in the
-                        reference coordinate system (Top_LiDAR).
-        rpy (np.array): A 1x3 array representing the roll, pitch, and yaw angles of the sensor,
-                        describing its rotation in itself.
-    """
+class VisionSensorsVeh:
     def __init__(self):
-        """
-        Initializes the Pose with default position (0, 0, 0) and rotation (0, 0, 0).
-        """
-        self.xyz: np.array = np.array([0, 0, 0])
-        self.rpy: np.array = np.array([0, 0, 0])
+        self.BACK_LEFT: Camera = Camera()
+        self.FRONT_LEFT: Camera = Camera()
+        self.STEREO_LEFT: Camera = Camera()
+        self.STEREO_RIGHT: Camera = Camera()
+        self.FRONT_RIGHT: Camera = Camera()
+        self.BACK_RIGHT: Camera = Camera()
+        self.REAR: Optional[Camera] = None    # not implemented
 
 
-class TransformationMtx:
-    """
-    Represents a transformation matrix with separate rotation and translation components.
-    Attributes:
-        rotation (np.array): A 3x3 matrix representing the rotation component of the transformation.
-        translation (np.array): A 1x3 matrix representing the translation component of the transformation.
-    """
+class LaserSensorsVeh:
     def __init__(self):
-        """
-        Initializes the TransformationMtx with zero rotation and translation matrices.
-        """
-        self.rotation: np.array = np.zeros((3, 3))
-        self.translation: np.array = np.zeros((1, 3))
+        self.LEFT: Lidar = Lidar()
+        self.TOP: Lidar = Lidar()
+        self.RIGHT: Lidar = Lidar()
+        self.REAR: Optional[Lidar] = None     # not implemented
+
+class VisionSensorsTow:
+    def __init__(self):
+        self.VIEW_1: Camera = Camera()
+        self.VIEW_2: Camera = Camera()
 
 
-class ROI:
-    """
-    Represents a Region of Interest (ROI) defined by its offset and dimensions.
-    Attributes:
-        x_offset (int): The horizontal offset of the ROI.
-        y_offset (int): The vertical offset of the ROI.
-        width (int): The width of the ROI.
-        height (int): The height of the ROI.
-    """
-    def __init__(self, x_off=0, y_off=0, width=0, height=0):
-        """
-        Initializes the ROI with the provided offset and dimensions.
-        Defaults to an ROI at the origin with zero width and height.
-        Parameters:
-            x_off (int, optional): Horizontal offset. Defaults to 0.
-            y_off (int, optional): Vertical offset. Defaults to 0.
-            width (int, optional): Width of the ROI. Defaults to 0.
-            height (int, optional): Height of the ROI. Defaults to 0.
-        """
-        self.x_offset = x_off
-        self.y_offset = y_off
-        self.width = width
-        self.height = height
+class LaserSensorsTow:
+    def __init__(self):
+        self.VIEW_1: Lidar = Lidar()
+        self.VIEW_2: Lidar = Lidar()
+        self.TOP: Lidar = Lidar()
 
-    def __iter__(self):
-        """
-        Allows iteration over the ROI attributes in the order: x_offset, y_offset, width, height.
-        Returns:
-            iterator: An iterator over the ROI attributes.
-        """
-        return iter((self.x_offset, self.y_offset, self.width, self.height))
+
+class Tower:
+    def __init__(self):
+        self.cameras: VisionSensorsTow = VisionSensorsTow()
+        self.lidars: LaserSensorsTow = LaserSensorsTow()
+        self.GNSS: GNSS = GNSS()
+
+
+class Vehicle:
+    def __init__(self):
+        self.cameras: VisionSensorsVeh = VisionSensorsVeh()
+        self.lidars: LaserSensorsVeh = LaserSensorsVeh()
+        self.IMU: IMU = IMU()
+        self.GNSS: GNSS = GNSS()

@@ -43,8 +43,9 @@ class Camera(metaclass=InfoBaseClass):
     STEREO_RIGHT = 3
     FRONT_RIGHT = 4
     BACK_RIGHT = 5
-    TOWER_1 = 6     # TOWER_A
-    TOWER_2 = 7     # TOWER_B
+    REAR = 6
+    VIEW_1 = 7
+    VIEW_2 = 8
 
 
 class Lidar(metaclass=InfoBaseClass):
@@ -54,11 +55,9 @@ class Lidar(metaclass=InfoBaseClass):
         OS1_TOP (int): Represents a OS1 top Lidar.
         OS0_RIGHT (int): Represents a OS0 right Lidar.
     """
-    OS0_LEFT = 0
-    OS1_TOP = 1
-    OS0_RIGHT = 2
-    BLICKFELD_1 = 3     # QUBE_A
-    BLICKFELD_2 = 4     # QUBE_B
+    LEFT = 0
+    TOP = 1
+    RIGHT = 2
 
 
 class IMU(metaclass=InfoBaseClass):
