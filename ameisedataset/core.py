@@ -4,7 +4,7 @@ import dill
 
 from typing import List, Optional
 from ameisedataset.data import *
-from ameisedataset.miscellaneous import InvalidFileTypeError, INT_LENGTH
+from ameisedataset.miscellaneous import InvalidFileTypeError, obj_to_bytes, obj_from_bytes, INT_LENGTH
 
 
 class DataRecord:
@@ -25,7 +25,7 @@ class DataRecord:
                 """
                 # Read frame_lengths, array with num_frames entries (int)
                 frame_lengths_len: int = int.from_bytes(file.read(INT_LENGTH), 'big')
-                self.frame_lengths = dill.loads(file.read(frame_lengths_len))
+                self.frame_lengths = obj_from_bytes(file.read(frame_lengths_len))
                 # Read frames
                 self.frames_data: bytes = file.read()
             self.num_frames: int = len(self.frame_lengths)
@@ -51,10 +51,9 @@ class DataRecord:
             frame_bytes = _frame.to_bytes()
             frame_lengths.append(len(frame_bytes))
             frames_bytes += frame_bytes
-        frame_lengths_bytes = dill.dumps(frame_lengths)
-        frame_lengths_bytes_len = len(frame_lengths_bytes).to_bytes(4, 'big')
+        frame_lengths_bytes = obj_to_bytes(frame_lengths)
         # pack data sequence
-        record_bytes = frame_lengths_bytes_len + frame_lengths_bytes + frames_bytes
+        record_bytes = frame_lengths_bytes + frame_lengths_bytes + frames_bytes
         # record_bytes_checksum = compute_checksum(record_bytes)
         return record_bytes         # record_bytes_checksum +
 
@@ -71,7 +70,7 @@ class Dataloader:
     def __getitem__(self, item) -> DataRecord:
         return DataRecord(record_file=self.record_map[item])
 
-    def get_record_by_name(self, filename: str) -> DataRecord:
+    def get_record_by_name(self, filename: str) -> Optional[DataRecord]:
         for record_path in self.record_map:
             if filename in record_path:
                 return DataRecord(record_file=record_path)
