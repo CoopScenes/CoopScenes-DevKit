@@ -1,7 +1,6 @@
-# Record
+# Record (t.b.d.)
 | Description            | BYTE_LENGTH            |
 |------------------------|------------------------|
-| Checksum               | 32                     |
 | MetaInformation_length | 4                      |
 | MetaInformation        | variable               |
 | Frame_quantity         | 4                      |

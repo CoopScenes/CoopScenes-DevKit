@@ -1,4 +1,3 @@
-from typing import List
 from PIL import Image as PilImage
 import numpy as np
 import cv2

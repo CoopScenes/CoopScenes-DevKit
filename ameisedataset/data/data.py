@@ -1,7 +1,7 @@
 import numpy as np
 
 from enum import Enum
-from typing import List, Tuple, Optional, Dict
+from typing import Tuple, Optional, Dict
 from decimal import Decimal
 from datetime import datetime, timedelta, timezone
 from PIL import Image as PilImage
@@ -31,6 +31,13 @@ def _convert_unix_to_utc(unix_timestamp_ns: Decimal, utc_offset_hours: int = 2) 
     return formatted_time + extended_precision
 
 
+class Odometry:
+    def __init__(self):
+        self.linear_velocity: Optional[np.array] = None
+        self.angular_velocity: Optional[np.array] = None
+        self.covariance: Optional[np.array] = None
+
+
 class Motion:
     def __init__(self,
                  timestamp: Optional[Decimal] = None,
@@ -40,13 +47,13 @@ class Motion:
                  angular_velocity_covariance: Optional[np.array] = None,
                  linear_acceleration: Optional[np.array] = None,
                  linear_acceleration_covariance: Optional[np.array] = None):
-        self.timestamp = timestamp
-        self.orientation = orientation
-        self.orientation_covariance = orientation_covariance
-        self.angular_velocity = angular_velocity
-        self.angular_velocity_covariance = angular_velocity_covariance
-        self.linear_acceleration = linear_acceleration
-        self.linear_acceleration_covariance = linear_acceleration_covariance
+        self.timestamp: Optional[Decimal] = timestamp
+        self.orientation: Optional[np.array] = orientation
+        self.orientation_covariance: Optional[np.array] = orientation_covariance
+        self.angular_velocity: Optional[np.array] = angular_velocity
+        self.angular_velocity_covariance: Optional[np.array] = angular_velocity_covariance
+        self.linear_acceleration: Optional[np.array] = linear_acceleration
+        self.linear_acceleration_covariance: Optional[np.array] = linear_acceleration_covariance
 
 
 class Position:
@@ -66,13 +73,13 @@ class Position:
                  services: Optional[Dict[str, Optional[bool]]] = None, latitude: Optional[Decimal] = None,
                  longitude: Optional[Decimal] = None, altitude: Optional[Decimal] = None,
                  covariance: Optional[np.array] = None, covariance_type: Optional[CovarianceType] = None):
-        self.timestamp = timestamp
+        self.timestamp: Optional[Decimal] = timestamp
         self.status = status
-        self.services = self.init_services(services)
-        self.latitude = latitude
-        self.longitude = longitude
-        self.altitude = altitude
-        self.covariance = covariance
+        self.services: Optional[Dict[str, Optional[bool]]] = self.init_services(services)
+        self.latitude: Optional[Decimal] = latitude
+        self.longitude: Optional[Decimal] = longitude
+        self.altitude: Optional[Decimal] = altitude
+        self.covariance: Optional[np.array] = covariance
         self.covariance_type = covariance_type
 
     def __iter__(self):
@@ -86,6 +93,7 @@ class Position:
         for key in default_services:
             services.setdefault(key, default_services[key])
         return services
+
 
 class Image:
     """

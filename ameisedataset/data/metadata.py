@@ -1,18 +1,15 @@
-import dill
 import json
-from typing import List, Tuple
+from typing import Tuple
 import numpy as np
-
-from ameisedataset.miscellaneous import compute_checksum, INT_LENGTH, NUM_CAMERAS, NUM_LIDAR
 
 
 class IMUInformation:
-    def __init__(self, name: str = ''):
+    def __init__(self, name: str = 'Microstrain 3DM_GQ7'):
         self.name: str = name
 
 
 class GNSSInformation:
-    def __init__(self, name: str = ''):
+    def __init__(self, name: str = 'C099-F9P'):
         self.name: str = name
 
 
@@ -32,14 +29,6 @@ class CameraInformation:
         exposure_time (int): Exposure time of the camera in milliseconds.
     """
     def __init__(self, name: str = ''):
-        """ Initialize a CameraInformation instance with the specified attributes.
-        Args:
-            name (str): Name of the camera.
-            camera_type (str): Type of the camera.
-            focal_length (int): Focal length of the camera.
-            aperture (int): Aperture size of the camera.
-            exposure_time (int): Exposure time of the camera.
-        """
         self.name: str = name
         self.shape: Tuple[int, int] = (0, 0)
         self.distortion_type: str = ''
@@ -87,15 +76,15 @@ class LidarInformation:
     """
     ouster_datatype_structure = {
         'names': [
-            'x',            # x-coordinate of the point
-            'y',            # y-coordinate of the point
-            'z',            # z-coordinate of the point
-            'intensity',    # Intensity of the point
-            't',            # Time after the frame timestamp in ns
-            'reflectivity', # Reflectivity of the point
-            'ring',         # Ring number (for multi-beam LiDARs)
-            'ambient',      # Ambient light intensity
-            'range'         # Distance from the LiDAR sensor to the measured point (hypotenuse) in mm.
+            'x',             # x-coordinate of the point
+            'y',             # y-coordinate of the point
+            'z',             # z-coordinate of the point
+            'intensity',     # Intensity of the point
+            't',             # Time after the frame timestamp in ns
+            'reflectivity',  # Reflectivity of the point
+            'ring',          # Ring number (for multi-beam LiDARs)
+            'ambient',       # Ambient light intensity
+            'range'          # Distance from the LiDAR sensor to the measured point (hypotenuse) in mm.
         ],
         'formats': ['<f4', '<f4', '<f4', '<f4', '<u4', '<u2', '<u2', '<u2', '<u4'],
         'offsets': [0, 4, 8, 16, 20, 24, 26, 28, 32],

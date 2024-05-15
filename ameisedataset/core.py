@@ -1,63 +1,35 @@
 import os
 import glob
-from typing import List, Tuple
+import dill
 
+from typing import List, Optional
 from ameisedataset.data import *
-from ameisedataset.miscellaneous import compute_checksum, InvalidFileTypeError, ChecksumError, SHA256_CHECKSUM_LENGTH, INT_LENGTH, NUM_FRAMES_PER_RECORD
-
-
-
-def _read_info_object(file):
-    """Read and deserialize an info object from the file."""
-    info_length = int.from_bytes(file.read(INT_LENGTH), 'big')
-    info_checksum = file.read(SHA256_CHECKSUM_LENGTH)  # SHA-256 checksum length
-    combined_info = file.read(info_length)
-
-    # Verify checksum
-    if compute_checksum(combined_info) != info_checksum:
-        raise ChecksumError(f"Checksum of Info is not correct! Check file.")
-    return Infos.from_bytes(combined_info)
-
-"""
-def _read_frame_object(file, meta_infos):
-    combined_data_len = int.from_bytes(file.read(INT_LENGTH), 'big')
-    combined_data_checksum = file.read(SHA256_CHECKSUM_LENGTH)  # SHA-256 checksum length
-    combined_data = file.read(combined_data_len)
-    # Verify checksum
-    if compute_checksum(combined_data) != combined_data_checksum:
-        raise ChecksumError("Checksum mismatch. Data might be corrupted!")
-    return Frame.from_bytes(combined_data, meta_info=meta_infos)
-
-
-def unpack_record(filename) -> Tuple[Infos, List[Frame]]:
-    # Ensure the provided file has the correct extension
-    if os.path.splitext(filename)[1] != ".4mse":
-        raise InvalidFileTypeError("This is not a valid AMEISE-Record file.")
-    frames: List[Frame] = []
-
-    with open(filename, 'rb') as file:
-        chunk_info, meta_info = _read_info_object(file)
-        # Read num frames
-        num_frames = int.from_bytes(file.read(INT_LENGTH), 'big')
-        # Read frames
-        for _ in range(num_frames):
-            frames.append(_read_frame_object(file, meta_info))
-    return meta_info, frames
-"""
+from ameisedataset.miscellaneous import InvalidFileTypeError, INT_LENGTH
 
 
 class DataRecord:
-    def __init__(self, record_file: str):
+    def __init__(self, record_file: Optional[str] = None):
+        # expect record_file to be an absolute readable path
+        self.name: Optional[str] = record_file
+        self.num_frames: int = 0
         self.frame_lengths: List[int] = []
-        with open(record_file, 'rb') as file:
-            self.meta_information = _read_info_object(file)
-            # Read num frames
-            self.num_frames = int.from_bytes(file.read(INT_LENGTH), 'big')
-            for _ in range(self.num_frames):
-                self.frame_lengths.append(int.from_bytes(file.read(INT_LENGTH), 'big'))
-            # Read frames
-            self.frames_data = file.read()
-        self.name = os.path.splitext(os.path.basename(record_file))[0]
+        self.frames_data: bytes = b""
+        if record_file is not None:
+            if os.path.splitext(record_file)[1] != ".4mse":
+                raise InvalidFileTypeError("This is not a valid AMEISE-Record file.")
+            with open(record_file, 'rb') as file:
+                """ TODO: implement checksum
+                record_checksum = file.read(SHA256_CHECKSUM_LENGTH)
+                if compute_checksum(combined_data) != record_checksum:
+                    raise ChecksumError("Checksum mismatch. Data might be corrupted!")
+                """
+                # Read frame_lengths, array with num_frames entries (int)
+                frame_lengths_len: int = int.from_bytes(file.read(INT_LENGTH), 'big')
+                self.frame_lengths = dill.loads(file.read(frame_lengths_len))
+                # Read frames
+                self.frames_data: bytes = file.read()
+            self.num_frames: int = len(self.frame_lengths)
+            self.name = os.path.splitext(os.path.basename(record_file))[0]
 
     def __len__(self):
         return self.num_frames
@@ -67,10 +39,28 @@ class DataRecord:
             raise ValueError("Frame-Index out of range.")
         start_pos = sum(self.frame_lengths[:frame_index])
         end_pos = start_pos + self.frame_lengths[frame_index]
-        return Frame.from_bytes(self.frames_data[start_pos:end_pos], self.meta_information)
+        return Frame.from_bytes(self.frames_data[start_pos:end_pos])
+
+    @staticmethod
+    def to_bytes(frames: List[Frame]) -> bytes:
+        # frame lengths
+        frame_lengths: List[int] = []
+        # frame bytes
+        frames_bytes = b""
+        for _frame in frames:
+            frame_bytes = _frame.to_bytes()
+            frame_lengths.append(len(frame_bytes))
+            frames_bytes += frame_bytes
+        frame_lengths_bytes = dill.dumps(frame_lengths)
+        frame_lengths_bytes_len = len(frame_lengths_bytes).to_bytes(4, 'big')
+        # pack data sequence
+        record_bytes = frame_lengths_bytes_len + frame_lengths_bytes + frames_bytes
+        # record_bytes_checksum = compute_checksum(record_bytes)
+        return record_bytes         # record_bytes_checksum +
 
 
 class Dataloader:
+    # TODO: implement __iter__()
     def __init__(self, data_dir: str):
         self.data_dir: os.path = os.path.join(data_dir)
         self.record_map: List[str] = glob.glob(os.path.join(self.data_dir, '*.4mse'))
@@ -88,8 +78,7 @@ class Dataloader:
         print(f"No record with name {filename} found.")
         return None
 
-
-amse_dataloader = Dataloader("/records")
-myRecord: DataRecord = amse_dataloader.get_record_by_name("2024-03-07-17-42-28_3_tower.4mse")
-myFrame: Frame = myRecord[7]
-print(myFrame.vehicle.cameras.FRONT_LEFT)
+# amse_dataloader = Dataloader("/records")
+# myRecord: DataRecord = amse_dataloader.get_record_by_name("2024-03-07-17-42-28_3_tower.4mse")
+# myFrame: Frame = myRecord[7]
+# print(myFrame.vehicle.cameras.FRONT_LEFT)
