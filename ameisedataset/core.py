@@ -11,6 +11,7 @@ class DataRecord:
     def __init__(self, record_file: Optional[str] = None):
         # expect record_file to be an absolute readable path
         self.name: Optional[str] = record_file
+        # TODO: store sequence name
         self.num_frames: int = 0
         self.frame_lengths: List[int] = []
         self.frames_data: bytes = b""
