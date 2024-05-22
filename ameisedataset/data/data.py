@@ -31,12 +31,11 @@ def _convert_unix_to_utc(unix_timestamp_ns: Decimal, utc_offset_hours: int = 2) 
     return formatted_time + extended_precision
 
 
-class Odometry:
+class Velocity:
     def __init__(self):
         self.linear_velocity: Optional[np.array] = None
         self.angular_velocity: Optional[np.array] = None
         self.covariance: Optional[np.array] = None
-
 
 class Motion:
     def __init__(self,

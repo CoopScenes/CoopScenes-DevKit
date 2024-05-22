@@ -3,6 +3,11 @@ from typing import Tuple
 import numpy as np
 
 
+class DynamicsInformation:
+    def __init__(self, velocity_source: str = 'Microstrain 3DM_GQ7'):
+        self.velocity_source: str = velocity_source
+
+
 class IMUInformation:
     def __init__(self, name: str = 'Microstrain 3DM_GQ7'):
         self.name: str = name
@@ -43,21 +48,6 @@ class CameraInformation:
         self.exposure_time: int = 0
         self.extrinsic: Pose = Pose()   # Transformation to Top_Lidar
         self.stereo_transform: TransformationMtx = TransformationMtx()
-
-    def add_from_ros_cam_info(self, cam_info_msg):
-        """ Populate the CameraInformation attributes from a ROS (Roboter Operating System) camera info object.
-        Args:
-            cam_info_msg: ROS camera info msg.
-        """
-        self.shape = (cam_info_msg.width, cam_info_msg.height)
-        self.camera_mtx = np.array(cam_info_msg.K).reshape(3, 3)
-        self.distortion_mtx = np.array(cam_info_msg.D)
-        self.rectification_mtx = np.array(cam_info_msg.R).reshape(3, 3)
-        self.projection_mtx = np.array(cam_info_msg.P).reshape(3, 4)
-        self.region_of_interest = ROI(x_off=cam_info_msg.roi.x_offset,
-                                      y_off=cam_info_msg.roi.y_offset,
-                                      height=cam_info_msg.roi.height,
-                                      width=cam_info_msg.roi.width)
 
 
 class LidarInformation:

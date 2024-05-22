@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List, Optional
 from ameisedataset.miscellaneous import serialize, deserialize, obj_to_bytes, obj_from_bytes, read_data_block
-from ameisedataset.data import Image, Points, Motion, Position, CameraInformation, LidarInformation, GNSSInformation, IMUInformation
+from ameisedataset.data import Image, Points, Motion, Position, CameraInformation, LidarInformation, GNSSInformation, IMUInformation, Velocity, DynamicsInformation
 
 
 class Camera:
@@ -69,6 +69,11 @@ class IMU:
         setattr(instance, 'motion', obj_from_bytes(motion_bytes))
         setattr(instance, 'info', obj_from_bytes(info_bytes))
         return instance
+
+class Dynamics:
+    def __init__(self, velocity_source=''):
+        self.velocity: List[Velocity] = []
+        self.info: DynamicsInformation = DynamicsInformation(velocity_source=velocity_source)
 
 
 class GNSS:

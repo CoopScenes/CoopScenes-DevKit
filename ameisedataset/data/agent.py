@@ -1,5 +1,5 @@
 from typing import Optional
-from ameisedataset.data import Camera, Lidar, IMU, GNSS, Odometry
+from ameisedataset.data import Camera, Lidar, IMU, GNSS, Dynamics
 from ameisedataset.miscellaneous import serialize, deserialize, obj_to_bytes, obj_from_bytes
 
 
@@ -117,9 +117,9 @@ class Vehicle:
     def __init__(self):
         self.cameras: VisionSensorsVeh = VisionSensorsVeh()
         self.lidars: LaserSensorsVeh = LaserSensorsVeh()
-        self.IMU: Optional[IMU] = IMU(name="Microstrain 3DM_GQ7")
-        self.GNSS: Optional[GNSS] = GNSS(name="Microstrain 3DM_GQ7")
-        # self.odometry: Optional[Odometry] = None
+        self.IMU: IMU = IMU(name="Microstrain 3DM_GQ7")
+        self.GNSS: GNSS = GNSS(name="Microstrain 3DM_GQ7")
+        self.dynamics: Dynamics = Dynamics(name="Microstrain 3DM_GQ7")
 
     def to_bytes(self):
         return self.cameras.to_bytes() + self.lidars.to_bytes() + serialize(self.IMU) + serialize(self.GNSS) + obj_to_bytes(self.odometry)
