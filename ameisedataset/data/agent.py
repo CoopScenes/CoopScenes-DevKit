@@ -5,12 +5,12 @@ from ameisedataset.miscellaneous import serialize, deserialize, obj_to_bytes, ob
 
 class VisionSensorsVeh:
     def __init__(self):
-        self.BACK_LEFT: Camera = Camera()
-        self.FRONT_LEFT: Camera = Camera()
-        self.STEREO_LEFT: Camera = Camera()
-        self.STEREO_RIGHT: Camera = Camera()
-        self.FRONT_RIGHT: Camera = Camera()
-        self.BACK_RIGHT: Camera = Camera()
+        self.BACK_LEFT: Optional[Camera] = None
+        self.FRONT_LEFT: Optional[Camera] = None
+        self.STEREO_LEFT: Optional[Camera] = None
+        self.STEREO_RIGHT: Optional[Camera] = None
+        self.FRONT_RIGHT: Optional[Camera] = None
+        self.BACK_RIGHT: Optional[Camera] = None
         self.REAR: Optional[Camera] = None
 
     def to_bytes(self):
@@ -34,9 +34,9 @@ class VisionSensorsVeh:
 
 class LaserSensorsVeh:
     def __init__(self):
-        self.LEFT: Lidar = Lidar()
-        self.TOP: Lidar = Lidar()
-        self.RIGHT: Lidar = Lidar()
+        self.LEFT: Optional[Lidar] = None
+        self.TOP: Optional[Lidar] = None
+        self.RIGHT: Optional[Lidar] = None
         self.REAR: Optional[Lidar] = None
 
     def to_bytes(self):
@@ -57,8 +57,8 @@ class LaserSensorsVeh:
 
 class VisionSensorsTow:
     def __init__(self):
-        self.VIEW_1: Camera = Camera()
-        self.VIEW_2: Camera = Camera()
+        self.VIEW_1: Optional[Camera] = None
+        self.VIEW_2: Optional[Camera] = None
 
     def to_bytes(self):
         return b''.join(serialize(camera) for camera in [
@@ -76,9 +76,9 @@ class VisionSensorsTow:
 
 class LaserSensorsTow:
     def __init__(self):
-        self.VIEW_1: Lidar = Lidar()
-        self.VIEW_2: Lidar = Lidar()
-        self.TOP: Lidar = Lidar()
+        self.VIEW_1: Optional[Lidar] = None
+        self.VIEW_2: Optional[Lidar] = None
+        self.TOP: Optional[Lidar] = None
 
     def to_bytes(self):
         return b''.join(serialize(lidar) for lidar in [
@@ -99,7 +99,7 @@ class Tower:
     def __init__(self):
         self.cameras: VisionSensorsTow = VisionSensorsTow()
         self.lidars: LaserSensorsTow = LaserSensorsTow()
-        self.GNSS: GNSS = GNSS(name="C099-F9P")
+        self.GNSS: Optional[GNSS] = GNSS(name="C099-F9P")
 
     def to_bytes(self):
         return self.cameras.to_bytes() + self.lidars.to_bytes() + serialize(self.GNSS)
@@ -117,9 +117,9 @@ class Vehicle:
     def __init__(self):
         self.cameras: VisionSensorsVeh = VisionSensorsVeh()
         self.lidars: LaserSensorsVeh = LaserSensorsVeh()
-        self.IMU: IMU = IMU(name="Microstrain 3DM_GQ7")
-        self.GNSS: GNSS = GNSS(name="Microstrain 3DM_GQ7")
-        self.odometry: Odometry = Odometry()
+        self.IMU: Optional[IMU] = IMU(name="Microstrain 3DM_GQ7")
+        self.GNSS: Optional[GNSS] = GNSS(name="Microstrain 3DM_GQ7")
+        # self.odometry: Optional[Odometry] = None
 
     def to_bytes(self):
         return self.cameras.to_bytes() + self.lidars.to_bytes() + serialize(self.IMU) + serialize(self.GNSS) + obj_to_bytes(self.odometry)
