@@ -1,137 +1,7 @@
 import json
 from typing import Tuple
 import numpy as np
-
-
-class DynamicsInformation:
-    def __init__(self, velocity_source: str = 'Microstrain 3DM_GQ7'):
-        self.velocity_source: str = velocity_source
-
-
-class IMUInformation:
-    def __init__(self, name: str = 'Microstrain 3DM_GQ7'):
-        self.name: str = name
-
-
-class GNSSInformation:
-    def __init__(self, name: str = 'C099-F9P'):
-        self.name: str = name
-
-
-class CameraInformation:
-    """ Represents detailed information about a camera.
-    Attributes:
-        name (str): Name of the camera.
-        shape (Tuple[int, int]): Dimensions (width, height) of the camera's image.
-        camera_mtx: Camera matrix.
-        distortion_mtx: Distortion matrix.
-        rectification_mtx: Rectification matrix.
-        projection_mtx: Projection matrix.
-        region_of_interest: Region of interest in the camera's view.
-        camera_type (str): Type of the camera.
-        focal_length (int): Focal length of the camera in millimeters.
-        aperture (int): Aperture size of the camera.
-        exposure_time (int): Exposure time of the camera in milliseconds.
-    """
-    def __init__(self, name: str = ''):
-        self.name: str = name
-        self.shape: Tuple[int, int] = (0, 0)
-        self.distortion_type: str = ''
-        self.camera_mtx: np.array = np.array([])
-        self.distortion_mtx: np.array = np.array([])
-        self.rectification_mtx: np.array = np.array([])
-        self.projection_mtx: np.array = np.array([])
-        self.region_of_interest: ROI = ROI()
-        self.camera_type: str = ''
-        self.focal_length: int = 0
-        self.aperture: int = 0
-        self.exposure_time: int = 0
-        self.extrinsic: Pose = Pose()   # Transformation to Top_Lidar
-        self.stereo_transform: TransformationMtx = TransformationMtx()
-
-
-class LidarInformation:
-    """ Represents detailed information about a LiDAR sensor.
-    Attributes:
-        name (str): Name of the LiDAR sensor.
-        dtype: Data type of the LiDAR points.
-        beam_altitude_angles: Altitude angles of the LiDAR beams.
-        beam_azimuth_angles: Azimuth angles of the LiDAR beams.
-        lidar_origin_to_beam_origin_mm: Distance from the LiDAR origin to the origin of the beams.
-        columns_per_frame: Number of columns in each LiDAR frame.
-        pixels_per_column: Number of pixels in each LiDAR column.
-        phase_lock_offset: Phase lock offset of the LiDAR sensor.
-        lidar_to_sensor_transform: Transformation matrix from the LiDAR to the sensor.
-        type: Product line or type of the LiDAR sensor.
-    """
-    ouster_datatype_structure = {
-        'names': [
-            'x',             # x-coordinate of the point
-            'y',             # y-coordinate of the point
-            'z',             # z-coordinate of the point
-            'intensity',     # Intensity of the point
-            't',             # Time after the frame timestamp in ns
-            'reflectivity',  # Reflectivity of the point
-            'ring',          # Ring number (for multi-beam LiDARs)
-            'ambient',       # Ambient light intensity
-            'range'          # Distance from the LiDAR sensor to the measured point (hypotenuse) in mm.
-        ],
-        'formats': ['<f4', '<f4', '<f4', '<f4', '<u4', '<u2', '<u2', '<u2', '<u4'],
-        'offsets': [0, 4, 8, 16, 20, 24, 26, 28, 32],
-        'itemsize': 48
-    }
-
-    blickfeld_datatype_structure = {
-        'names': [
-            'x',  # x-coordinate of the point
-            'y',  # y-coordinate of the point
-            'z',  # z-coordinate of the point
-            'intensity',  # Intensity of the point
-            'point_id',
-        ],
-        'formats': ['<f4', '<f4', '<f4', '<u4', '<u4'],
-        'offsets': [0, 4, 8, 12, 16],
-        'itemsize': 20
-    }
-
-    def __init__(self, name: str = "", dtype: str = "ouster"):
-        """ Initialize a LidarInformation instance with a given name.
-        Args:
-            name (str): Name of the LiDAR sensor.
-        """
-        self.name: str = name
-        if dtype == "ouster":
-            dtype = LidarInformation.ouster_datatype_structure
-        elif dtype == "blickfeld":
-            dtype = LidarInformation.blickfeld_datatype_structure
-        else:
-            raise Exception("Unrecognized dtype!")
-        self.dtype = np.dtype(dtype)
-        self.beam_altitude_angles = None
-        self.beam_azimuth_angles = None
-        self.lidar_origin_to_beam_origin_mm = None
-        self.columns_per_frame = None
-        self.pixels_per_column = None
-        self.phase_lock_offset = None
-        self.lidar_to_sensor_transform = None
-        self.type = None
-        self.extrinsic: Pose = Pose()
-
-    def add_from_json_lidar_info(self, laser_info_obj):
-        """ Populate the Ouster LidarInformation attributes from a ROS (Roboter Operating System) ouster std_string_msg
-        LiDAR info object.
-        Args:
-            laser_info_obj: json LiDAR info object.
-        """
-        data_dict = json.loads(laser_info_obj.data)
-        self.beam_altitude_angles = data_dict["beam_intrinsics"]["beam_altitude_angles"]
-        self.beam_azimuth_angles = data_dict["beam_intrinsics"]["beam_azimuth_angles"]
-        self.lidar_origin_to_beam_origin_mm = data_dict["beam_intrinsics"]["lidar_origin_to_beam_origin_mm"]
-        self.columns_per_frame = data_dict["lidar_data_format"]["columns_per_frame"]
-        self.pixels_per_column = data_dict["lidar_data_format"]["pixels_per_column"]
-        self.phase_lock_offset = data_dict["config_params"]["phase_lock_offset"]
-        self.lidar_to_sensor_transform = data_dict["lidar_intrinsics"]["lidar_to_sensor_transform"]
-        self.type = data_dict["sensor_info"]["prod_line"]
+from typing import Optional
 
 
 class Pose:
@@ -198,3 +68,127 @@ class ROI:
             iterator: An iterator over the ROI attributes.
         """
         return iter((self.x_offset, self.y_offset, self.width, self.height))
+
+
+class DynamicsInformation:
+    def __init__(self, velocity_source: Optional[str] = None):
+        self.velocity_source: str = velocity_source
+
+
+class IMUInformation:
+    def __init__(self, model_name: Optional[str] = None):
+        self.model_name: str = model_name
+
+
+class GNSSInformation:
+    def __init__(self, model_name: Optional[str] = None):
+        self.model_name: str = model_name
+
+
+class CameraInformation:
+
+    def __init__(self,
+                 name: Optional[str] = None,
+                 model_name: Optional[str] = None,
+                 shape: Optional[Tuple[int, int]] = None,
+                 distortion_type: Optional[str] = None,
+                 camera_mtx: Optional[np.array] = None,
+                 distortion_mtx: Optional[np.array] = None,
+                 rectification_mtx: Optional[np.array] = None,
+                 projection_mtx: Optional[np.array] = None,
+                 region_of_interest: Optional[ROI] = None,
+                 camera_type: Optional[str] = None,
+                 focal_length: Optional[int] = None,
+                 aperture: Optional[int] = None,
+                 exposure_time: Optional[int] = None,
+                 extrinsic: Optional[Pose] = None,
+                 stereo_transform: Optional[TransformationMtx] = None):
+        self.name = name
+        self.model_name = model_name
+        self.shape = shape
+        self.distortion_type = distortion_type
+        self.camera_mtx = camera_mtx
+        self.distortion_mtx = distortion_mtx
+        self.rectification_mtx = rectification_mtx
+        self.projection_mtx = projection_mtx
+        self.region_of_interest = region_of_interest
+        self.camera_type = camera_type
+        self.focal_length = focal_length
+        self.aperture = aperture
+        self.exposure_time = exposure_time
+        self.extrinsic = extrinsic
+        self.stereo_transform = stereo_transform
+
+
+class LidarInformation:
+    ouster_datatype_structure = {
+        'names': [
+            'x',  # x-coordinate of the point
+            'y',  # y-coordinate of the point
+            'z',  # z-coordinate of the point
+            'intensity',  # Intensity of the point
+            't',  # Time after the frame timestamp in ns
+            'reflectivity',  # Reflectivity of the point
+            'ring',  # Ring number (for multi-beam LiDARs)
+            'ambient',  # Ambient light intensity
+            'range'  # Distance from the LiDAR sensor to the measured point (hypotenuse) in mm.
+        ],
+        'formats': ['<f4', '<f4', '<f4', '<f4', '<u4', '<u2', '<u2', '<u2', '<u4'],
+        'offsets': [0, 4, 8, 16, 20, 24, 26, 28, 32],
+        'itemsize': 48
+    }
+
+    blickfeld_datatype_structure = {
+        'names': [
+            'x',  # x-coordinate of the point
+            'y',  # y-coordinate of the point
+            'z',  # z-coordinate of the point
+            'intensity',  # Intensity of the point
+            'point_id',
+        ],
+        'formats': ['<f4', '<f4', '<f4', '<u4', '<u4'],
+        'offsets': [0, 4, 8, 12, 16],
+        'itemsize': 20
+    }
+
+    def __init__(self,
+                 name: Optional[str] = None,
+                 model_name: Optional[str] = None,
+                 beam_altitude_angles: Optional[np.array] = None,
+                 beam_azimuth_angles: Optional[np.array] = None,
+                 lidar_origin_to_beam_origin_mm: Optional[np.array] = None,
+                 columns_per_frame: Optional[int] = None,
+                 pixels_per_column: Optional[int] = None,
+                 phase_lock_offset: Optional[int] = None,
+                 lidar_to_sensor_transform: Optional[np.array] = None,
+                 extrinsic: Optional[Pose] = None):
+
+        self._model_name = None
+        self.name = name
+        self.model_name = model_name  # This will trigger the setter and update dtype
+        self.beam_altitude_angles = beam_altitude_angles
+        self.beam_azimuth_angles = beam_azimuth_angles
+        self.lidar_origin_to_beam_origin_mm = lidar_origin_to_beam_origin_mm
+        self.columns_per_frame = columns_per_frame
+        self.pixels_per_column = pixels_per_column
+        self.phase_lock_offset = phase_lock_offset
+        self.lidar_to_sensor_transform = lidar_to_sensor_transform
+        self.extrinsic = extrinsic
+
+    @property
+    def model_name(self) -> Optional[str]:
+        return self._model_name
+
+    @model_name.setter
+    def model_name(self, value: Optional[str]):
+        self._model_name = value
+        if value is not None:
+            if 'OS' in value:
+                dtype_structure = LidarInformation.ouster_datatype_structure
+            elif 'blickfeld' in value:
+                dtype_structure = LidarInformation.blickfeld_datatype_structure
+            else:
+                dtype_structure = None
+            self.dtype = np.dtype(dtype_structure) if dtype_structure else None
+        else:
+            self.dtype = None
