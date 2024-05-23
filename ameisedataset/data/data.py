@@ -32,10 +32,15 @@ def _convert_unix_to_utc(unix_timestamp_ns: Decimal, utc_offset_hours: int = 2) 
 
 
 class Velocity:
-    def __init__(self):
-        self.linear_velocity: Optional[np.array] = None
-        self.angular_velocity: Optional[np.array] = None
-        self.covariance: Optional[np.array] = None
+    def __init__(self, timestamp: Optional[Decimal] = None,
+                 linear_velocity: Optional[np.array] = None,
+                 angular_velocity: Optional[np.array] = None,
+                 covariance: Optional[np.array] = None):
+        self.timestamp: Optional[Decimal] = timestamp
+        self.linear_velocity: Optional[np.array] = linear_velocity
+        self.angular_velocity: Optional[np.array] = angular_velocity
+        self.covariance: Optional[np.array] = covariance
+
 
 class Motion:
     def __init__(self,

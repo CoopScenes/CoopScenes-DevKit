@@ -99,7 +99,7 @@ class Tower:
     def __init__(self):
         self.cameras: VisionSensorsTow = VisionSensorsTow()
         self.lidars: LaserSensorsTow = LaserSensorsTow()
-        self.GNSS: Optional[GNSS] = GNSS(name="C099-F9P")
+        self.GNSS: Optional[GNSS] = GNSS()
 
     def to_bytes(self):
         return self.cameras.to_bytes() + self.lidars.to_bytes() + serialize(self.GNSS)
@@ -117,9 +117,9 @@ class Vehicle:
     def __init__(self):
         self.cameras: VisionSensorsVeh = VisionSensorsVeh()
         self.lidars: LaserSensorsVeh = LaserSensorsVeh()
-        self.IMU: IMU = IMU(name="Microstrain 3DM_GQ7")
-        self.GNSS: GNSS = GNSS(name="Microstrain 3DM_GQ7")
-        self.dynamics: Dynamics = Dynamics(name="Microstrain 3DM_GQ7")
+        self.IMU: IMU = IMU()
+        self.GNSS: GNSS = GNSS()
+        self.dynamics: Dynamics = Dynamics()
 
     def to_bytes(self):
         return self.cameras.to_bytes() + self.lidars.to_bytes() + serialize(self.IMU) + serialize(self.GNSS) + obj_to_bytes(self.odometry)
