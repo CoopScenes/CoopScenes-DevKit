@@ -1,13 +1,14 @@
 import numpy as np
 from typing import List, Optional
 from ameisedataset.miscellaneous import serialize, deserialize, obj_to_bytes, obj_from_bytes, read_data_block
-from ameisedataset.data import Image, Points, Motion, Position, CameraInformation, LidarInformation, GNSSInformation, IMUInformation, Velocity, DynamicsInformation
+from ameisedataset.data import Image, Points, Motion, Position, CameraInformation, LidarInformation, GNSSInformation, \
+    IMUInformation, Velocity, DynamicsInformation
 
 
 class Camera:
     def __init__(self, image: Optional[Image] = None, info: Optional[CameraInformation] = None):
-        self.image: Optional[Image] = image
-        self.info: Optional[CameraInformation] = info
+        self.image = image
+        self.info = info
 
     def __getattr__(self, attr) -> np.array:
         if hasattr(self.image, attr):
@@ -28,8 +29,8 @@ class Camera:
 
 class Lidar:
     def __init__(self, points: Optional[Points] = None, info: Optional[LidarInformation] = None):
-        self.points: Optional[Points] = points
-        self.info: Optional[LidarInformation] = info
+        self.points = points
+        self.info = info
 
     def __getattr__(self, attr) -> np.array:
         if hasattr(self.points, attr):
@@ -50,8 +51,8 @@ class Lidar:
 
 class IMU:
     def __init__(self, motion: Optional[List[Motion]] = None, info: Optional[IMUInformation] = None):
-        self.motion: Optional[List[Motion]] = motion
-        self.info: Optional[IMUInformation] = info
+        self.motion = motion
+        self.info = info
 
     def __getattr__(self, attr) -> np.array:
         if hasattr(self.ekf, attr):
@@ -73,8 +74,8 @@ class IMU:
 
 class Dynamics:
     def __init__(self, velocity: Optional[List[Velocity]] = None, info: Optional[DynamicsInformation] = None):
-        self.velocity: Optional[List[Velocity]] = velocity
-        self.info: Optional[DynamicsInformation] = info
+        self.velocity = velocity
+        self.info = info
 
     def to_bytes(self) -> bytes:
         return serialize(self.velocity) + obj_to_bytes(self.info)
@@ -91,8 +92,8 @@ class Dynamics:
 
 class GNSS:
     def __init__(self, motion: Optional[List[Position]] = None, info: Optional[GNSSInformation] = None):
-        self.position: Optional[List[Position]] = motion
-        self.info: Optional[GNSSInformation] = info
+        self.position = motion
+        self.info = info
 
     def __getattr__(self, attr) -> np.array:
         if hasattr(self.ekf, attr):

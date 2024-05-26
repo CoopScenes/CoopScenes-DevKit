@@ -9,17 +9,18 @@ class Pose:
     Describes the position of a sensor in terms of its position and rotation relative to
     the reference coordinate system (Top_LiDAR).
     Attributes:
-        xyz (np.array): A 1x3 array representing the position of the sensor in the
-                        reference coordinate system (Top_LiDAR).
-        rpy (np.array): A 1x3 array representing the roll, pitch, and yaw angles of the sensor,
-                        describing its rotation in itself.
+        xyz (Optional[np.array]): A 1x3 array representing the position of the sensor in the
+                                  reference coordinate system (Top_LiDAR).
+        rpy (Optional[np.array]): A 1x3 array representing the roll, pitch, and yaw angles of the sensor,
+                                  describing its rotation in itself.
     """
-    def __init__(self):
+
+    def __init__(self, xyz: Optional[np.array] = None, rpy: Optional[np.array] = None):
         """
-        Initializes the Pose with default position (0, 0, 0) and rotation (0, 0, 0).
+        Initializes the Pose with default position and rotation as None.
         """
-        self.xyz: np.array = np.array([0, 0, 0])
-        self.rpy: np.array = np.array([0, 0, 0])
+        self.xyz = xyz
+        self.rpy = rpy
 
 
 class TransformationMtx:
@@ -29,32 +30,34 @@ class TransformationMtx:
         rotation (np.array): A 3x3 matrix representing the rotation component of the transformation.
         translation (np.array): A 1x3 matrix representing the translation component of the transformation.
     """
-    def __init__(self):
+
+    def __init__(self, rotation: Optional[np.array] = None, translation: Optional[np.array] = None):
         """
         Initializes the TransformationMtx with zero rotation and translation matrices.
         """
-        self.rotation: np.array = np.zeros((3, 3))
-        self.translation: np.array = np.zeros((1, 3))
+        self.rotation = rotation
+        self.translation = translation
 
 
 class ROI:
     """
     Represents a Region of Interest (ROI) defined by its offset and dimensions.
     Attributes:
-        x_offset (int): The horizontal offset of the ROI.
-        y_offset (int): The vertical offset of the ROI.
-        width (int): The width of the ROI.
-        height (int): The height of the ROI.
+        x_offset (Optional[int]): The horizontal offset of the ROI.
+        y_offset (Optional[int]): The vertical offset of the ROI.
+        width (Optional[int]): The width of the ROI.
+        height (Optional[int]): The height of the ROI.
     """
-    def __init__(self, x_off=0, y_off=0, width=0, height=0):
+
+    def __init__(self, x_off: Optional[int] = None, y_off: Optional[int] = None, width: Optional[int] = None,
+                 height: Optional[int] = None):
         """
         Initializes the ROI with the provided offset and dimensions.
-        Defaults to an ROI at the origin with zero width and height.
         Parameters:
-            x_off (int, optional): Horizontal offset. Defaults to 0.
-            y_off (int, optional): Vertical offset. Defaults to 0.
-            width (int, optional): Width of the ROI. Defaults to 0.
-            height (int, optional): Height of the ROI. Defaults to 0.
+            x_off (Optional[int], optional): Horizontal offset. Defaults to None.
+            y_off (Optional[int], optional): Vertical offset. Defaults to None.
+            width (Optional[int], optional): Width of the ROI. Defaults to None.
+            height (Optional[int], optional): Height of the ROI. Defaults to None.
         """
         self.x_offset = x_off
         self.y_offset = y_off
@@ -72,23 +75,25 @@ class ROI:
 
 class DynamicsInformation:
     def __init__(self, velocity_source: Optional[str] = None):
-        self.velocity_source: str = velocity_source
+        self.velocity_source = velocity_source
 
 
 class IMUInformation:
-    def __init__(self, model_name: Optional[str] = None):
-        self.model_name: str = model_name
+    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
+        self.model_name = model_name
+        self.extrinsic = extrinsic
 
 
 class GNSSInformation:
-    def __init__(self, model_name: Optional[str] = None):
-        self.model_name: str = model_name
+    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
+        self.model_name = model_name
+        self.extrinsic = extrinsic
 
 
 class CameraInformation:
 
     def __init__(self,
-                 name: Optional[str] = None,
+                 name: str,
                  model_name: Optional[str] = None,
                  shape: Optional[Tuple[int, int]] = None,
                  distortion_type: Optional[str] = None,
@@ -152,7 +157,7 @@ class LidarInformation:
     }
 
     def __init__(self,
-                 name: Optional[str] = None,
+                 name: str,
                  model_name: Optional[str] = None,
                  beam_altitude_angles: Optional[np.array] = None,
                  beam_azimuth_angles: Optional[np.array] = None,
