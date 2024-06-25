@@ -1,6 +1,6 @@
 from typing import Optional
 from ameisedataset.data import Camera, Lidar, IMU, GNSS, Dynamics
-from ameisedataset.miscellaneous import serialize, deserialize, obj_to_bytes, obj_from_bytes
+from ameisedataset.miscellaneous import serialize, deserialize, INT_LENGTH
 
 
 class VisionSensorsVeh:
@@ -28,8 +28,9 @@ class VisionSensorsVeh:
     def from_bytes(cls, data) -> 'VisionSensorsVeh':
         instance = cls()
         for attr in ['BACK_LEFT', 'FRONT_LEFT', 'STEREO_LEFT', 'STEREO_RIGHT', 'FRONT_RIGHT', 'BACK_RIGHT', 'REAR']:
-            setattr(instance, attr, deserialize(data, Camera)[0])
-        return instance
+            camera, data = deserialize(data, Camera)
+            setattr(instance, attr, camera)
+        return instance, data
 
 
 class LaserSensorsVeh:
@@ -51,8 +52,9 @@ class LaserSensorsVeh:
     def from_bytes(cls, data) -> 'LaserSensorsVeh':
         instance = cls()
         for attr in ['LEFT', 'TOP', 'RIGHT', 'REAR']:
-            setattr(instance, attr, deserialize(data, Lidar)[0])
-        return instance
+            lidar, data = deserialize(data, Lidar)
+            setattr(instance, attr, lidar)
+        return instance, data
 
 
 class VisionSensorsTow:
@@ -70,29 +72,31 @@ class VisionSensorsTow:
     def from_bytes(cls, data) -> 'VisionSensorsTow':
         instance = cls()
         for attr in ['VIEW_1', 'VIEW_2']:
-            setattr(instance, attr, deserialize(data, Camera)[0])
-        return instance
+            camera, data = deserialize(data, Camera)
+            setattr(instance, attr, camera)
+        return instance, data
 
 
 class LaserSensorsTow:
     def __init__(self):
         self.VIEW_1: Optional[Lidar] = None
         self.VIEW_2: Optional[Lidar] = None
-        self.TOP: Optional[Lidar] = None
+        self.UPPER_PLATFORM: Optional[Lidar] = None
 
     def to_bytes(self):
         return b''.join(serialize(lidar) for lidar in [
             self.VIEW_1,
             self.VIEW_2,
-            self.TOP
+            self.UPPER_PLATFORM
         ])
 
     @classmethod
     def from_bytes(cls, data) -> 'LaserSensorsTow':
         instance = cls()
-        for attr in ['VIEW_1', 'VIEW_2', 'TOP']:
-            setattr(instance, attr, deserialize(data, Lidar)[0])
-        return instance
+        for attr in ['VIEW_1', 'VIEW_2', 'UPPER_PLATFORM']:
+            lidar, data = deserialize(data, Lidar)
+            setattr(instance, attr, lidar)
+        return instance, data
 
 
 class Tower:
@@ -102,14 +106,15 @@ class Tower:
         self.GNSS: Optional[GNSS] = GNSS()
 
     def to_bytes(self):
-        return self.cameras.to_bytes() + self.lidars.to_bytes() + serialize(self.GNSS)
+        tower_bytes = self.cameras.to_bytes() + self.lidars.to_bytes() + serialize(self.GNSS)
+        return len(tower_bytes).to_bytes(INT_LENGTH, 'big') + tower_bytes
 
     @classmethod
     def from_bytes(cls, data) -> 'Tower':
         instance = cls()
-        instance.cameras = VisionSensorsTow.from_bytes(data)
-        instance.lidars = LaserSensorsTow.from_bytes(data)
-        instance.GNSS = deserialize(data, GNSS)[0]
+        instance.cameras, data = VisionSensorsTow.from_bytes(data)
+        instance.lidars, data = LaserSensorsTow.from_bytes(data)
+        instance.GNSS, _ = deserialize(data, GNSS)
         return instance
 
 
@@ -119,17 +124,19 @@ class Vehicle:
         self.lidars: LaserSensorsVeh = LaserSensorsVeh()
         self.IMU: IMU = IMU()
         self.GNSS: GNSS = GNSS()
-        self.dynamics: Dynamics = Dynamics()
+        self.DYNAMICS: Dynamics = Dynamics()
 
     def to_bytes(self):
-        return self.cameras.to_bytes() + self.lidars.to_bytes() + serialize(self.IMU) + serialize(self.GNSS) + obj_to_bytes(self.odometry)
+        vehicle_bytes = self.cameras.to_bytes() + self.lidars.to_bytes() + serialize(self.IMU) + serialize(
+            self.GNSS) + serialize(self.DYNAMICS)
+        return len(vehicle_bytes).to_bytes(INT_LENGTH, 'big') + vehicle_bytes
 
     @classmethod
     def from_bytes(cls, data) -> 'Vehicle':
         instance = cls()
-        instance.cameras = VisionSensorsVeh.from_bytes(data)
-        instance.lidars = LaserSensorsVeh.from_bytes(data)
+        instance.cameras, data = VisionSensorsVeh.from_bytes(data)
+        instance.lidars, data = LaserSensorsVeh.from_bytes(data)
         instance.IMU, data = deserialize(data, IMU)
         instance.GNSS, data = deserialize(data, GNSS)
-        instance.odometry = obj_from_bytes(data)
+        instance.DYNAMICS, _ = deserialize(data, Dynamics)
         return instance

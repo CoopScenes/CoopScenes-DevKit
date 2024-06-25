@@ -54,9 +54,9 @@ class DataRecord:
             frames_bytes += frame_bytes
         frame_lengths_bytes = obj_to_bytes(frame_lengths)
         # pack data sequence
-        record_bytes = frame_lengths_bytes + frame_lengths_bytes + frames_bytes
+        record_bytes = frame_lengths_bytes + frames_bytes
         # record_bytes_checksum = compute_checksum(record_bytes)
-        return record_bytes         # record_bytes_checksum +
+        return record_bytes  # record_bytes_checksum +
 
 
 class Dataloader:

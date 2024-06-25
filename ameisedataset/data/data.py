@@ -5,6 +5,7 @@ from typing import Tuple, Optional, Dict
 from decimal import Decimal
 from datetime import datetime, timedelta, timezone
 from PIL import Image as PilImage
+from ameisedataset.miscellaneous import read_data_block
 
 
 def _convert_unix_to_utc(unix_timestamp_ns: Decimal, utc_offset_hours: int = 2) -> str:
@@ -140,19 +141,12 @@ class Image:
         return image_bytes
 
     @classmethod
-    def from_bytes(cls, data_bytes: bytes, ts_data: bytes, shape: Tuple[int, int]):
-        """
-        Creates an Image instance from byte data.
-        Args:
-            data_bytes (bytes): Byte data of the image.
-            ts_data (bytes): Serialized timestamp data associated with the image.
-            shape (Tuple[int, int]): Dimensions of the image as (width, height).
-        Returns:
-            Image: An instance of the Image class populated with the provided data.
-        """
+    def from_bytes(cls, data: bytes, shape: Tuple[int, int]):
+        img_bytes, data = read_data_block(data)
+        ts_bytes, _ = read_data_block(data)
         img_instance = cls()
-        img_instance.timestamp = Decimal(ts_data.decode('utf-8'))
-        img_instance.image = PilImage.frombytes("RGB", shape, data_bytes)
+        img_instance.timestamp = Decimal(ts_bytes.decode('utf-8'))
+        img_instance.image = PilImage.frombytes("RGB", shape, img_bytes)
         return img_instance
 
     def get_timestamp(self, utc=2):
@@ -207,7 +201,7 @@ class Points:
         return laser_bytes
 
     @classmethod
-    def from_bytes(cls, data_bytes: bytes, ts_data: bytes, dtype: np.dtype):
+    def from_bytes(cls, data: bytes, dtype: np.dtype):
         """
         Creates a Points instance from byte data.
         Parameters:
@@ -217,10 +211,12 @@ class Points:
         Returns:
             Points: A Points instance initialized with the provided data.
         """
-        img_instance = cls()
-        img_instance.timestamp = Decimal(ts_data.decode('utf-8'))
-        img_instance.points = np.frombuffer(data_bytes, dtype=dtype)
-        return img_instance
+        pts_bytes, data = read_data_block(data)
+        ts_bytes, _ = read_data_block(data)
+        pts_instance = cls()
+        pts_instance.timestamp = Decimal(ts_bytes.decode('utf-8'))
+        pts_instance.points = np.frombuffer(pts_bytes, dtype=dtype)
+        return pts_instance
 
     def get_timestamp(self, utc=2):
         """

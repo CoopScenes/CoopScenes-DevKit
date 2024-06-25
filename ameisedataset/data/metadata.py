@@ -190,7 +190,7 @@ class LidarInformation:
         if value is not None:
             if 'OS' in value:
                 dtype_structure = LidarInformation.ouster_datatype_structure
-            elif 'blickfeld' in value:
+            elif 'Blickfeld' in value:
                 dtype_structure = LidarInformation.blickfeld_datatype_structure
             else:
                 dtype_structure = None

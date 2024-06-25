@@ -6,9 +6,9 @@ from ameisedataset.data import Image, Points, Motion, Position, CameraInformatio
 
 
 class Camera:
-    def __init__(self, image: Optional[Image] = None, info: Optional[CameraInformation] = None):
-        self.image = image
+    def __init__(self, info: Optional[CameraInformation] = None, image: Optional[Image] = None):
         self.info = info
+        self.image = image
 
     def __getattr__(self, attr) -> np.array:
         if hasattr(self.image, attr):
@@ -16,21 +16,22 @@ class Camera:
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
 
     def to_bytes(self) -> bytes:
-        return serialize(self.image) + obj_to_bytes(self.info)
+        return obj_to_bytes(self.info) + serialize(self.image)
 
     @classmethod
     def from_bytes(cls, data: bytes) -> 'Camera':
         instance = cls()
-        setattr(instance, 'image', deserialize(data, Image)[0])
-        info_bytes, _ = read_data_block(data)
+        info_bytes, data = read_data_block(data)
         setattr(instance, 'info', obj_from_bytes(info_bytes))
+        image, _ = deserialize(data, Image, instance.info.shape)
+        setattr(instance, 'image', image)
         return instance
 
 
 class Lidar:
-    def __init__(self, points: Optional[Points] = None, info: Optional[LidarInformation] = None):
-        self.points = points
+    def __init__(self, info: Optional[LidarInformation] = None, points: Optional[Points] = None):
         self.info = info
+        self.points = points
 
     def __getattr__(self, attr) -> np.array:
         if hasattr(self.points, attr):
@@ -38,21 +39,22 @@ class Lidar:
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
 
     def to_bytes(self) -> bytes:
-        return serialize(self.points) + obj_to_bytes(self.info)
+        return obj_to_bytes(self.info) + serialize(self.points)
 
     @classmethod
     def from_bytes(cls, data: bytes) -> 'Lidar':
         instance = cls()
-        setattr(instance, 'points', deserialize(data, Points)[0])
-        info_bytes, _ = read_data_block(data)
+        info_bytes, data = read_data_block(data)
         setattr(instance, 'info', obj_from_bytes(info_bytes))
+        points, _ = deserialize(data, Points, instance.info.dtype)
+        setattr(instance, 'points', points)
         return instance
 
 
 class IMU:
-    def __init__(self, motion: Optional[List[Motion]] = None, info: Optional[IMUInformation] = None):
-        self.motion = motion
+    def __init__(self, info: Optional[IMUInformation] = None):
         self.info = info
+        self.motion: List[Motion] = []
 
     def __getattr__(self, attr) -> np.array:
         if hasattr(self.ekf, attr):
@@ -60,40 +62,40 @@ class IMU:
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
 
     def to_bytes(self) -> bytes:
-        return serialize(self.motion) + obj_to_bytes(self.info)
+        return obj_to_bytes(self.info) + obj_to_bytes(self.motion)
 
     @classmethod
     def from_bytes(cls, data: bytes) -> 'IMU':
         instance = cls()
-        motion_bytes, data = read_data_block(data)
-        info_bytes, _ = read_data_block(data)
-        setattr(instance, 'motion', obj_from_bytes(motion_bytes))
+        info_bytes, data = read_data_block(data)
         setattr(instance, 'info', obj_from_bytes(info_bytes))
+        motion_bytes, _ = read_data_block(data)
+        setattr(instance, 'motion', obj_from_bytes(motion_bytes))
         return instance
 
 
 class Dynamics:
-    def __init__(self, velocity: Optional[List[Velocity]] = None, info: Optional[DynamicsInformation] = None):
-        self.velocity = velocity
+    def __init__(self, info: Optional[DynamicsInformation] = None):
         self.info = info
+        self.velocity: List[Velocity] = []
 
     def to_bytes(self) -> bytes:
-        return serialize(self.velocity) + obj_to_bytes(self.info)
+        return obj_to_bytes(self.info) + obj_to_bytes(self.velocity)
 
     @classmethod
     def from_bytes(cls, data: bytes) -> 'Dynamics':
         instance = cls()
-        velocity_bytes, data = read_data_block(data)
-        info_bytes, _ = read_data_block(data)
-        setattr(instance, 'velocity', obj_from_bytes(velocity_bytes))
+        info_bytes, data = read_data_block(data)
         setattr(instance, 'info', obj_from_bytes(info_bytes))
+        velocity_bytes, _ = read_data_block(data)
+        setattr(instance, 'velocity', obj_from_bytes(velocity_bytes))
         return instance
 
 
 class GNSS:
-    def __init__(self, motion: Optional[List[Position]] = None, info: Optional[GNSSInformation] = None):
-        self.position = motion
+    def __init__(self, info: Optional[GNSSInformation] = None):
         self.info = info
+        self.position: List[Position] = []
 
     def __getattr__(self, attr) -> np.array:
         if hasattr(self.ekf, attr):
@@ -101,13 +103,13 @@ class GNSS:
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
 
     def to_bytes(self) -> bytes:
-        return serialize(self.position) + obj_to_bytes(self.info)
+        return obj_to_bytes(self.info) + obj_to_bytes(self.position)
 
     @classmethod
     def from_bytes(cls, data: bytes) -> 'GNSS':
         instance = cls()
-        position_bytes, data = read_data_block(data)
-        info_bytes, _ = read_data_block(data)
-        setattr(instance, 'position', obj_from_bytes(position_bytes))
+        info_bytes, data = read_data_block(data)
         setattr(instance, 'info', obj_from_bytes(info_bytes))
+        position_bytes, _ = read_data_block(data)
+        setattr(instance, 'position', obj_from_bytes(position_bytes))
         return instance

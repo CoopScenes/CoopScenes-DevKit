@@ -1,8 +1,6 @@
 from decimal import Decimal
 from ameisedataset.miscellaneous import obj_to_bytes, obj_from_bytes, read_data_block
 from ameisedataset.data import Tower, Vehicle, VisionSensorsVeh, VisionSensorsTow, LaserSensorsVeh, LaserSensorsTow
-from typing import List
-from data import Image, Points
 
 
 class Frame:
@@ -59,6 +57,6 @@ class Frame:
                         if sub_attr_value is None:
                             unfilled_fields.append(sub_attr_name)
                 elif attr_value is None:
+                    # check for len(obj.attr)
                     unfilled_fields.append(attr_value)
         return True if not unfilled_fields else unfilled_fields
-

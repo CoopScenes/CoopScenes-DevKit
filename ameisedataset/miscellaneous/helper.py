@@ -28,12 +28,13 @@ def serialize(obj):
     if obj is None:
         return b'\x00\x00\x00\x00'
     obj_bytes = obj.to_bytes()
-    return len(obj_bytes).to_bytes(INT_LENGTH, 'big') + obj_bytes
+    obj_bytes_len = len(obj_bytes).to_bytes(INT_LENGTH, 'big')
+    return obj_bytes_len + obj_bytes
 
 
-def deserialize(data, cls):
+def deserialize(data, cls, *args):
     obj_len = int.from_bytes(data[:INT_LENGTH], 'big')
     if obj_len == 0:
         return None, data[INT_LENGTH:]
     obj_data = data[INT_LENGTH:INT_LENGTH + obj_len]
-    return cls.from_bytes(obj_data), data[INT_LENGTH + obj_len:]
+    return cls.from_bytes(obj_data, *args), data[INT_LENGTH + obj_len:]
