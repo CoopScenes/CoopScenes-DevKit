@@ -1,8 +1,8 @@
 import numpy as np
-import cv2
 from typing import Tuple, List
 
 from ameisedataset.data import Pose, CameraInformation, LidarInformation, Image
+
 
 def euler_to_rotation_matrix(roll, pitch, yaw):
     """Convert Euler angles to rotation matrix."""
@@ -34,7 +34,8 @@ def create_transformation_matrix(translation, rotation):
     return T
 
 
-def get_points_on_image(pcloud: List[np.ndarray], lidar_info: LidarInformation, cam_info: CameraInformation, get_valid_only=True,
+def get_points_on_image(pcloud: List[np.ndarray], lidar_info: LidarInformation, cam_info: CameraInformation,
+                        get_valid_only=True,
                         dtype_points_return=None) -> Tuple[np.array, List[Tuple]]:
     """Retrieve the projection matrix based on provided parameters."""
     if dtype_points_return is None:

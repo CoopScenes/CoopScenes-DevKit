@@ -1,7 +1,5 @@
-import json
-from typing import Tuple
+from typing import Tuple, Optional
 import numpy as np
-from typing import Optional
 
 
 class Pose:

@@ -1,5 +1,4 @@
 import numpy as np
-
 from enum import Enum
 from typing import Tuple, Optional, Dict
 from decimal import Decimal

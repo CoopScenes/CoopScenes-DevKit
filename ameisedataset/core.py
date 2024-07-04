@@ -1,6 +1,5 @@
 import os
 import glob
-import dill
 
 from typing import List, Optional
 from ameisedataset.data import *
