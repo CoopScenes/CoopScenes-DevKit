@@ -8,7 +8,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='ameise',
-    version='0.4.3',
+    version='0.5',
     packages=find_packages(),
     include_package_data=True,
     install_requires=requirements,
