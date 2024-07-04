@@ -2,3 +2,4 @@ numpy
 typing
 datetime
 Pillow
+dill
