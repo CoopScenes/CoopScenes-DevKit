@@ -52,10 +52,14 @@ class Frame:
         unfilled_fields = []
         for agent in [self.vehicle, self.tower]:
             for attr_name, attr_value in agent.__dict__.items():
-                if isinstance(attr_value, (VisionSensorsVeh, VisionSensorsTow, LaserSensorsVeh, LaserSensorsTow)):
+                if isinstance(attr_value, (VisionSensorsVeh, VisionSensorsTow)):
                     for sub_attr_name, sub_attr_value in attr_value.__dict__.items():
                         if sub_attr_value is None:
-                            unfilled_fields.append(sub_attr_name)
+                            unfilled_fields.append(f'CAMERA_{sub_attr_name}')
+                if isinstance(attr_value, (LaserSensorsVeh, LaserSensorsTow)):
+                    for sub_attr_name, sub_attr_value in attr_value.__dict__.items():
+                        if sub_attr_value is None:
+                            unfilled_fields.append(f'LIDAR_{sub_attr_name}')
                 elif attr_value is None:
                     # check for len(obj.attr)
                     unfilled_fields.append(attr_value)

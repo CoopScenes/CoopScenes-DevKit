@@ -1,6 +1,7 @@
 from ameisedataset import DataRecord
 
-dataloader = DataRecord("/home/slam/datasets/packed/id00000_2024-05-27_16-45-04.4mse")
-myFrame = dataloader[0]
+dataloader = DataRecord("/media/slam/data/bus_packed/id00140_2024-07-18_13-54-47.4mse")
+myFrame = dataloader[18]
 myFrame.vehicle.cameras.FRONT_LEFT.image.show()
+myFrame.vehicle.cameras.BACK_RIGHT.image.show()
 pass
