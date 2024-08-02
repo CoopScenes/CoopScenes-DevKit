@@ -20,6 +20,12 @@ class Pose:
         self.xyz = xyz
         self.rpy = rpy
 
+    def __str__(self):
+        """
+        Returns a string representation of the Pose object for printing.
+        """
+        return f"Pose(xyz={self.xyz}, rpy={self.rpy})"
+
 
 class TransformationMtx:
     """

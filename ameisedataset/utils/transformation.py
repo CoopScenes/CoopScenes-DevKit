@@ -1,62 +1,15 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
-from typing import Tuple, List
-from ameisedataset.data import CameraInformation, LidarInformation
-
-def extract_translation_and_euler_from_matrix(mtx):
-    # Extrahieren des Translationsvektors
-    translation_vector = mtx[:3, 3]
-
-    # Extrahieren der Rotationsmatrix und Umwandeln in Euler-Winkel (Radiant)
-    rotation_matrix = mtx[:3, :3]
-    rotation = R.from_matrix(rotation_matrix)
-    euler_angles_rad = rotation.as_euler('xyz', degrees=False)
-
-    return translation_vector, euler_angles_rad
-
-
-def get_points_on_image(pcloud: List[np.ndarray], lidar_info: LidarInformation, cam_info: CameraInformation,
-                        get_valid_only=True,
-                        dtype_points_return=None) -> Tuple[np.array, List[Tuple]]:
-    """Retrieve the projection matrix based on provided parameters."""
-    if dtype_points_return is None:
-        dtype_points_return = ['x', 'y', 'z', 'intensity', 'range']
-    lidar_tf = Transformation('tbd', 'tbd', lidar_info.extrinsic.xyz, lidar_info.extrinsic.rpy)
-    camera_tf = Transformation('tbd', 'tbd', cam_info.extrinsic.xyz, cam_info.extrinsic.rpy)
-    camera_inverse_tf = camera_tf.invert_transformation()
-    lidar_to_cam_tf = camera_inverse_tf.add_transformation(lidar_tf)
-    rect_mtx = np.eye(4)
-    rect_mtx[:3, :3] = cam_info.rectification_mtx
-    proj_mtx = cam_info.projection_mtx
-
-    projection = []
-    points = []
-    for point in pcloud:
-        point_vals = np.array(point.tolist()[:3])
-        # Transform points to new coordinate system
-        point_in_camera = proj_mtx.dot(rect_mtx.dot(lidar_to_cam_tf.transformation_mtx.dot(np.append(point_vals[:3], 1))))
-        # check if pts are behind the camera
-        u = point_in_camera[0] / point_in_camera[2]
-        v = point_in_camera[1] / point_in_camera[2]
-        if get_valid_only:
-            if point_in_camera[2] <= 0:
-                continue
-            elif 0 <= u < cam_info.shape[0] and 0 <= v < cam_info.shape[1]:
-                projection.append((u, v))
-                points.append(point[dtype_points_return])
-            else:
-                continue
-        else:
-            projection.append((u, v))
-    return np.array(points, dtype=points[0].dtype), projection
+from typing import Tuple, List, Union
+from ameisedataset.data import Lidar, Camera, IMU, GNSS
 
 
 class Transformation:
-    def __init__(self, at, to, xyz, rpy):
+    def __init__(self, at, to, x, y, z, roll, pitch, yaw):
         self._at = at
         self._to = to
-        self._translation = xyz
-        self._rotation = rpy
+        self._translation = np.array([x, y, z], dtype=float)
+        self._rotation = np.array([roll, pitch, yaw], dtype=float)
         self._update_transformation_matrix()
 
     @property
@@ -100,26 +53,26 @@ class Transformation:
         self.transformation_mtx[:3, :3] = rotation_matrix
         self.transformation_mtx[:3, 3] = self._translation
 
-    def add_transformation(self, transformation_to_add):
-        transformation_mtx_to_add = transformation_to_add.transformation_mtx
-        new_transformation_mtx = np.dot(self.transformation_mtx, transformation_mtx_to_add)
+    def combine_transformation(self, transformation_to):
+        second_transformation_mtx = transformation_to.transformation_mtx
+        new_transformation_mtx = np.dot(second_transformation_mtx, self.transformation_mtx)
 
         translation_vector, euler_angles = extract_translation_and_euler_from_matrix(new_transformation_mtx)
+        x, y, z = translation_vector
+        roll, pitch, yaw = euler_angles
 
-        new_transformation = Transformation(self.at, transformation_to_add.to, translation_vector, euler_angles)
+        new_transformation = Transformation(self.at, transformation_to.to, x, y, z, roll, pitch, yaw)
 
         return new_transformation
 
     def invert_transformation(self):
-        inverse_rotation_matrix = self.transformation_mtx[:3, :3].T
-        inverse_translation_vector = -inverse_rotation_matrix @ self.transformation_mtx[:3, 3]
-        inverse_transformation_matrix = np.identity(4)
-        inverse_transformation_matrix[:3, :3] = inverse_rotation_matrix
-        inverse_transformation_matrix[:3, 3] = inverse_translation_vector
+        inverse_transformation_matrix = np.linalg.inv(self.transformation_mtx)
 
         translation_vector, euler_angles = extract_translation_and_euler_from_matrix(inverse_transformation_matrix)
+        x, y, z = translation_vector
+        roll, pitch, yaw = euler_angles
 
-        inverse_transformation = Transformation(self.to, self.at, translation_vector, euler_angles)
+        inverse_transformation = Transformation(self.to, self.at, x, y, z, roll, pitch, yaw)
 
         return inverse_transformation
 
@@ -129,3 +82,70 @@ class Transformation:
         return (f"Transformation at {self._at} to {self._to},\n"
                 f"  translation=[{translation_str}],\n"
                 f"  rotation=[{rotation_str}]\n")
+
+
+def get_transformation(sensor: Union[Camera, Lidar, IMU, GNSS]) -> Transformation:
+    # Assert that sensor is of the correct type
+    assert isinstance(sensor, (Camera, Lidar, IMU, GNSS)), "sensor must be a Camera, Lidar, IMU, or GNSS object"
+    if 'view' in getattr(sensor.info, 'name', ''):
+        sensor_to = 'lidar_upper_platform/os_sensor'
+    else:
+        sensor_to = 'lidar_top/os_sensor'
+
+    if isinstance(sensor, Camera):
+        sensor_at = f'cam_{sensor.info.name}'
+    elif isinstance(sensor, Lidar):
+        if 'view' in getattr(sensor.info, 'name', ''):
+            sensor_at = f'lidar_{sensor.info.name}'
+        else:
+            sensor_at = f'lidar_{sensor.info.name}/os_sensor'
+    else:
+        sensor_at = f'ins'
+
+    x, y, z = sensor.info.extrinsic.xyz
+    roll, pitch, yaw = sensor.info.extrinsic.rpy
+
+    tf = Transformation(sensor_at, sensor_to, x, y, z, roll, pitch, yaw)
+    return tf
+
+
+def extract_translation_and_euler_from_matrix(mtx):
+    # Extrahieren des Translationsvektors
+    translation_vector = mtx[:3, 3]
+
+    # Extrahieren der Rotationsmatrix und Umwandeln in Euler-Winkel (Radiant)
+    rotation_matrix = mtx[:3, :3]
+    rotation = R.from_matrix(rotation_matrix)
+    euler_angles_rad = rotation.as_euler('xyz', degrees=False)
+
+    return translation_vector, euler_angles_rad
+
+
+def get_projection(lidar: Lidar, camera: Camera) -> Tuple[np.array, List[Tuple]]:
+    lidar_tf = get_transformation(lidar)
+    camera_tf = get_transformation(camera)
+
+    camera_inverse_tf = camera_tf.invert_transformation()
+    lidar_to_cam_tf = lidar_tf.combine_transformation(camera_inverse_tf)
+    rect_mtx = np.eye(4)
+    rect_mtx[:3, :3] = camera.info.rectification_mtx
+    proj_mtx = camera.info.projection_mtx
+
+    projection = []
+    points = []
+    for point in lidar.points.points:
+        point_vals = np.array(point.tolist()[:3])
+        # Transform points to new coordinate system
+        point_in_camera = proj_mtx.dot(
+            rect_mtx.dot(lidar_to_cam_tf.transformation_mtx.dot(np.append(point_vals[:3], 1))))
+        # check if pts are behind the camera
+        u = point_in_camera[0] / point_in_camera[2]
+        v = point_in_camera[1] / point_in_camera[2]
+        if point_in_camera[2] <= 0:
+            continue
+        elif 0 <= u < camera.info.shape[0] and 0 <= v < camera.info.shape[1]:
+            projection.append((u, v))
+            points.append(point)
+        else:
+            continue
+    return np.array(points, dtype=points[0].dtype), projection
