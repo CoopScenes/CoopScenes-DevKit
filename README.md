@@ -1,4 +1,4 @@
-# AEIF-D: AMEISE EgoInfraFusion - Dataset
+# AEIF-D: AMEISE Ego-Vehicle and Infrastrcture Fusion - Dataset
 
 ![AmeiseLogo](https://raw.githubusercontent.com/MarcelVSHNS/ameise-dataset/main/docs/Ameise_logo.png) 
 
