@@ -2,3 +2,7 @@ numpy
 datetime
 Pillow
 dill
+scipy
+opencv-python
+matplotlib
+open3d

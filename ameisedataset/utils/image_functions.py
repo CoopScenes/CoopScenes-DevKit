@@ -4,7 +4,7 @@ from ameisedataset.data import Camera, Image
 import cv2
 
 
-def rectify_image(camera: Camera):
+def get_rect_img(camera: Camera):
     """Rectify the provided image using camera information."""
     # Init and calculate rectification matrix
     mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix=camera.info.camera_mtx,
@@ -14,15 +14,17 @@ def rectify_image(camera: Camera):
                                              size=camera.info.shape,
                                              m1type=cv2.CV_16SC2)
     # Apply matrix
-    rectified_image = cv2.remap(np.array(camera.image), mapx, mapy, interpolation=cv2.INTER_LANCZOS4)
+    rectified_image = cv2.remap(np.array(camera.image.image), mapx, mapy, interpolation=cv2.INTER_LANCZOS4)
 
     return Image(PilImage.fromarray(rectified_image), camera.image.timestamp)
 
 
-def create_stereo_image(camera_left: Camera, camera_right: Camera) -> np.ndarray:
-    # Convert PIL images to numpy arrays
-    img1 = np.array(camera_left.image.convert('L'))  # Convert to grayscale
-    img2 = np.array(camera_right.image.convert('L'))  # Convert to grayscale
+def get_depth_map(camera_left: Camera, camera_right: Camera) -> np.ndarray:
+    rect_left = get_rect_img(camera_left)
+    rect_right = get_rect_img(camera_right)
+
+    img1 = np.array(rect_left.image.convert('L'))  # Convert to grayscale
+    img2 = np.array(rect_right.image.convert('L'))  # Convert to grayscale
     # Create the block matching algorithm with high-quality settings
     stereo = cv2.StereoSGBM_create(
         minDisparity=0,

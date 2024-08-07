@@ -1,42 +1,49 @@
-from PIL import ImageDraw, Image
+from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 import open3d as o3d
-import ameisedataset.utils.transformation as tf
-import ameisedataset.utils.image_functions as img_fkt
+
+from ameisedataset.data import Lidar, Camera
+import ameisedataset.utils.fusion_functions as ff
+import ameisedataset.utils.image_functions as imf
 
 
-def show_disparity_map(disparity_map, cmap_name="viridis", val_min=None, val_max=None):
-    cmap = matplotlib.colormaps[cmap_name]
-    val_min = val_min if val_min is not None else np.min(disparity_map)
-    val_max = val_max if val_max is not None else np.max(disparity_map)
+def show_disparity_map(camera_left, camera_right, cmap_name="viridis", max_value=40):
+    # Get the colormap
+    cmap = plt.get_cmap(cmap_name)
+
+    disparity_map = imf.get_depth_map(camera_left, camera_right)
+
+    # Set the min and max values for normalization
+    val_min = np.min(disparity_map)
+    val_max = max_value
+
+    # Create a mask for outliers (disparity values greater than 10 * val_max)
     mask = disparity_map > 10 * val_max
-    norm_values = np.where(mask, 0, (disparity_map - val_min) / (val_max - val_min))
+
+    # Normalize the disparity map
+    norm_values = (disparity_map - val_min) / (val_max - val_min)
+    norm_values = np.clip(norm_values, 0, 1)  # Ensure values are within [0, 1]
+
+    # Apply the colormap
     colored_map = cmap(norm_values)
-    colored_map[mask] = [0, 0, 0, 1]  # Set masked values to black
+
+    # Set masked values to black
+    colored_map[mask] = [0, 0, 0, 1]  # RGBA, with alpha=1
+
+    # Convert to 8-bit per channel image
     colored_map = (colored_map[:, :, :3] * 255).astype(np.uint8)
+
+    # Create and return the image
     img = Image.fromarray(colored_map)
-    return img
+
+    img.show()
 
 
-def plot_points_on_image(img, points, values, cmap_name="inferno", radius=2):
-    draw = ImageDraw.Draw(img)
-    cmap = matplotlib.colormaps[cmap_name + "_r"]
-    val_min = np.min(values)
-    val_max = np.max(values) * 0.5
+def show_points(lidar: Lidar):
+    points = lidar.points.points
 
-    norm_values = (values - val_min) / (val_max - val_min)
-
-    for punkt, value in zip(points, norm_values):
-        x, y = punkt
-        rgba = cmap(value)
-        farbe = (int(rgba[0] * 255), int(rgba[1] * 255), int(rgba[2] * 255))
-        draw.ellipse([(x - radius, y - radius), (x + radius, y + radius)], fill=farbe)
-    return img
-
-
-def visualize_points(points):
     # Convert structured NumPy array to a regular 3D NumPy array with contiguous memory.
     xyz_points = np.stack((points['x'], points['y'], points['z']), axis=-1)
 
@@ -54,43 +61,14 @@ def visualize_points(points):
     o3d.visualization.draw_geometries([pcd])
 
 
-def vis_lidar_temporal(points):
-    max_timestamp = np.max(points['t'])
-    min_timestamp = np.min(points['t'])
-
-    threshold_ts = min_timestamp + 0.05 * (max_timestamp - min_timestamp)
-    subset_points = points[points['t'] <= threshold_ts]
-    visualize_points(subset_points)
-
-    threshold_ts = min_timestamp + 0.1 * (max_timestamp - min_timestamp)
-    subset_points = points[points['t'] <= threshold_ts]
-    visualize_points(subset_points)
-
-    threshold_ts = min_timestamp + 0.2 * (max_timestamp - min_timestamp)
-    subset_points = points[points['t'] <= threshold_ts]
-    visualize_points(subset_points)
-
-    threshold_ts = min_timestamp + 0.3 * (max_timestamp - min_timestamp)
-    subset_points = points[points['t'] <= threshold_ts]
-    visualize_points(subset_points)
-
-    threshold_ts = min_timestamp + 0.4 * (max_timestamp - min_timestamp)
-    subset_points = points[points['t'] <= threshold_ts]
-    visualize_points(subset_points)
+def show_projection(camera: Camera, lidar: Lidar, intensity=False, static_color=None, max_range_factor=0.5):
+    proj_image = ff.get_projection_img(camera, lidar, intensity, static_color, max_range_factor)
+    proj_image.show()
 
 
-def check_tf_correction(camera: Camera, lidar: Lidar, roll_correction, pitch_correction, yaw_correction):
-    if 'view' in lidar.info.name:
-        range_variable = 'y'
-    else:
-        range_variable = 'range'
-
-    # Original projection
-    pts, proj = tf.get_projection(lidar, camera)
-
-    # Display original projection
-    stereo_left_rect_1 = img_fkt.rectify_image(camera)
-    proj_img = plot_points_on_image(stereo_left_rect_1, proj, pts[range_variable])
+def show_tf_correction(camera: Camera, lidar: Lidar, roll_correction, pitch_correction, yaw_correction, intensity=False,
+                       static_color=None, max_range_factor=0.5):
+    proj_img = ff.get_projection_img(camera, lidar, intensity, static_color, max_range_factor)
 
     # Adjust extrinsic parameters
     x, y, z = camera.info.extrinsic.xyz
@@ -98,12 +76,8 @@ def check_tf_correction(camera: Camera, lidar: Lidar, roll_correction, pitch_cor
     camera.info.extrinsic.xyz = np.array([x, y, z])
     camera.info.extrinsic.rpy = np.array([roll + roll_correction, pitch + pitch_correction, yaw + yaw_correction])
 
-    # New projection with corrected extrinsic parameters
-    pts2, proj2 = tf.get_projection(lidar, camera)
-
     # Display corrected projection
-    stereo_left_rect_2 = img_fkt.rectify_image(camera)
-    proj_img_corrected = plot_points_on_image(stereo_left_rect_2, proj2, pts2[range_variable])
+    proj_img_corrected = ff.get_projection_img(camera, lidar, intensity, static_color, max_range_factor)
 
     fig, axes = plt.subplots(1, 2, figsize=(40, 26))
 

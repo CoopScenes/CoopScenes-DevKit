@@ -1,7 +1,7 @@
+from ameisedataset.data import Lidar, Camera, IMU, GNSS
 import numpy as np
 from scipy.spatial.transform import Rotation as R
-from typing import Tuple, List, Union
-from ameisedataset.data import Lidar, Camera, IMU, GNSS
+from typing import Union
 
 
 class Transformation:
@@ -57,7 +57,8 @@ class Transformation:
         second_transformation_mtx = transformation_to.transformation_mtx
         new_transformation_mtx = np.dot(second_transformation_mtx, self.transformation_mtx)
 
-        translation_vector, euler_angles = extract_translation_and_euler_from_matrix(new_transformation_mtx)
+        translation_vector, euler_angles = Transformation.extract_translation_and_euler_from_matrix(
+            new_transformation_mtx)
         x, y, z = translation_vector
         roll, pitch, yaw = euler_angles
 
@@ -68,13 +69,26 @@ class Transformation:
     def invert_transformation(self):
         inverse_transformation_matrix = np.linalg.inv(self.transformation_mtx)
 
-        translation_vector, euler_angles = extract_translation_and_euler_from_matrix(inverse_transformation_matrix)
+        translation_vector, euler_angles = Transformation.extract_translation_and_euler_from_matrix(
+            inverse_transformation_matrix)
         x, y, z = translation_vector
         roll, pitch, yaw = euler_angles
 
         inverse_transformation = Transformation(self.to, self.at, x, y, z, roll, pitch, yaw)
 
         return inverse_transformation
+
+    @staticmethod
+    def extract_translation_and_euler_from_matrix(mtx):
+        # Extract the translation vector
+        translation_vector = mtx[:3, 3]
+
+        # Extract the rotation matrix and convert to Euler angles (radians)
+        rotation_matrix = mtx[:3, :3]
+        rotation = R.from_matrix(rotation_matrix)
+        euler_angles_rad = rotation.as_euler('xyz', degrees=False)
+
+        return translation_vector, euler_angles_rad
 
     def __repr__(self):
         translation_str = ', '.join(f"{coord:.3f}" for coord in self.translation)
@@ -100,52 +114,10 @@ def get_transformation(sensor: Union[Camera, Lidar, IMU, GNSS]) -> Transformatio
         else:
             sensor_at = f'lidar_{sensor.info.name}/os_sensor'
     else:
-        sensor_at = f'ins'
+        sensor_at = 'ins'
 
     x, y, z = sensor.info.extrinsic.xyz
     roll, pitch, yaw = sensor.info.extrinsic.rpy
 
     tf = Transformation(sensor_at, sensor_to, x, y, z, roll, pitch, yaw)
     return tf
-
-
-def extract_translation_and_euler_from_matrix(mtx):
-    # Extrahieren des Translationsvektors
-    translation_vector = mtx[:3, 3]
-
-    # Extrahieren der Rotationsmatrix und Umwandeln in Euler-Winkel (Radiant)
-    rotation_matrix = mtx[:3, :3]
-    rotation = R.from_matrix(rotation_matrix)
-    euler_angles_rad = rotation.as_euler('xyz', degrees=False)
-
-    return translation_vector, euler_angles_rad
-
-
-def get_projection(lidar: Lidar, camera: Camera) -> Tuple[np.array, List[Tuple]]:
-    lidar_tf = get_transformation(lidar)
-    camera_tf = get_transformation(camera)
-
-    camera_inverse_tf = camera_tf.invert_transformation()
-    lidar_to_cam_tf = lidar_tf.combine_transformation(camera_inverse_tf)
-    rect_mtx = np.eye(4)
-    rect_mtx[:3, :3] = camera.info.rectification_mtx
-    proj_mtx = camera.info.projection_mtx
-
-    projection = []
-    points = []
-    for point in lidar.points.points:
-        point_vals = np.array(point.tolist()[:3])
-        # Transform points to new coordinate system
-        point_in_camera = proj_mtx.dot(
-            rect_mtx.dot(lidar_to_cam_tf.transformation_mtx.dot(np.append(point_vals[:3], 1))))
-        # check if pts are behind the camera
-        u = point_in_camera[0] / point_in_camera[2]
-        v = point_in_camera[1] / point_in_camera[2]
-        if point_in_camera[2] <= 0:
-            continue
-        elif 0 <= u < camera.info.shape[0] and 0 <= v < camera.info.shape[1]:
-            projection.append((u, v))
-            points.append(point)
-        else:
-            continue
-    return np.array(points, dtype=points[0].dtype), projection
