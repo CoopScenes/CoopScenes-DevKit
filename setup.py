@@ -7,17 +7,18 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name='ameise',
-    version='0.5.2',
+    name='aeif-dataset',
+    version='0.6',
     packages=find_packages(),
     include_package_data=True,
     install_requires=requirements,
     python_requires='>=3.7',
-    url='https://github.com/MarcelVSHNS/ameise-dataset.git',
+    url='https://github.com/MarcelVSHNS/AEIF-Dataset.git',
     license='Apache License 2.0',
     author='Marcel',
     author_email='marcel.vosshans@hs-esslingen.de',
-    description='Dev-Kit for AMEISE dataset',
+    description='Dev-Kit for AEIF-dataset',
     long_description=long_description,
     long_description_content_type="text/markdown"
 )
+
