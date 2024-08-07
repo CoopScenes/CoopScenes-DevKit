@@ -1,12 +1,12 @@
-# OPNV Dataset - Open public network for versatile data
+# AEIF-D: AMEISE EgoInfraFusion - Dataset
 
 ![AmeiseLogo](https://raw.githubusercontent.com/MarcelVSHNS/ameise-dataset/main/docs/Ameise_logo.png) 
 
-Dev-Kit for [Project AMEISE](https://ameise.wandelgesellschaft.de/) records: 
+Dev-Kit for records collected during [Project AMEISE](https://ameise.wandelgesellschaft.de/)
 
 ## Description
 
-The OPNV-dataset is a development kit for the OPNV dataset. It provides functionalities to unpack AMEISE record 
+The AEIF-dataset is a development kit for the AEIF dataset. It provides functionalities to unpack AMEISE record 
 files and extract meta information and frames. The core functionality revolves around handling AMEISE record files 
 with the .4mse extension.
 
@@ -14,7 +14,7 @@ with the .4mse extension.
 
 To install the ameise-dataset, you can use pip:
 ```console
-pip install ameise
+pip install aeif-dataset
 ```
 
 ## Getting Started
