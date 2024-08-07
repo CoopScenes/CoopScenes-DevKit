@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 import open3d as o3d
+from typing import Optional
 
 from ameisedataset.data import Lidar, Camera
 import ameisedataset.utils.fusion_functions as ff
@@ -61,9 +62,15 @@ def show_points(lidar: Lidar):
     o3d.visualization.draw_geometries([pcd])
 
 
-def show_projection(camera: Camera, lidar: Lidar, intensity=False, static_color=None, max_range_factor=0.5):
-    proj_image = ff.get_projection_img(camera, lidar, intensity, static_color, max_range_factor)
-    proj_image.show()
+def show_projection(camera: Camera, lidar: Lidar, lidar2: Optional[Lidar] = None, lidar3: Optional[Lidar] = None,
+                    static_color=None, static_color2=None,
+                    static_color3=None, max_range_factor=0.5, intensity=False):
+    camera.image.image = ff.get_projection_img(camera, lidar, intensity, static_color, max_range_factor)
+    if lidar2 is not None:
+        camera.image.image = ff.get_projection_img(camera, lidar2, intensity, static_color2, max_range_factor, False)
+    if lidar3 is not None:
+        camera.image.image = ff.get_projection_img(camera, lidar3, intensity, static_color3, max_range_factor, False)
+    camera.image.image.show()
 
 
 def show_tf_correction(camera: Camera, lidar: Lidar, roll_correction, pitch_correction, yaw_correction, intensity=False,

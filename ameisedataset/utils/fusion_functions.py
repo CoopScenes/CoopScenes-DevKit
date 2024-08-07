@@ -37,7 +37,8 @@ def get_projection(lidar: Lidar, camera: Camera) -> Tuple[np.array, List[Tuple]]
     return np.array(points, dtype=points[0].dtype), projection
 
 
-def get_projection_img(camera: Camera, lidar: Lidar, intensity=False, static_color=None, max_range_factor=0.5):
+def get_projection_img(camera: Camera, lidar: Lidar, intensity=False, static_color=None, max_range_factor=0.5,
+                       raw_image=True):
     if intensity:
         highlight = 'intensity'
     elif 'view' in lidar.info.name:
@@ -50,13 +51,16 @@ def get_projection_img(camera: Camera, lidar: Lidar, intensity=False, static_col
 
     # Display original projection
     proj_img = plot_points_on_image(camera, proj, pts[highlight], static_color=static_color,
-                                    max_range_factor=max_range_factor)
+                                    max_range_factor=max_range_factor, raw_image=raw_image)
     return proj_img
 
 
 def plot_points_on_image(camera, points, values, cmap_name="inferno", radius=2, static_color=None,
-                         max_range_factor=0.5):
-    rect_img = img_fkt.get_rect_img(camera)
+                         max_range_factor=0.5, raw_image=True):
+    if raw_image:
+        rect_img = img_fkt.get_rect_img(camera)
+    else:
+        rect_img = camera.image.image
 
     draw = ImageDraw.Draw(rect_img)
     cmap = matplotlib.colormaps[cmap_name + "_r"]
