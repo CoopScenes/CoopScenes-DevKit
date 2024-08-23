@@ -1,15 +1,16 @@
-import ameisedataset.utils.transformation as tf
-import ameisedataset.utils.image_functions as img_fkt
-from ameisedataset.data import Lidar, Camera
 from PIL import ImageDraw
 import numpy as np
 import matplotlib
 from typing import Tuple, List
 
+from aeifdataset.data import Lidar, Camera
+from aeifdataset.utils import get_transformation
+from aeifdataset.utils import get_rect_img
+
 
 def get_projection(lidar: Lidar, camera: Camera) -> Tuple[np.array, List[Tuple]]:
-    lidar_tf = tf.get_transformation(lidar)
-    camera_tf = tf.get_transformation(camera)
+    lidar_tf = get_transformation(lidar)
+    camera_tf = get_transformation(camera)
 
     camera_inverse_tf = camera_tf.invert_transformation()
     lidar_to_cam_tf = lidar_tf.combine_transformation(camera_inverse_tf)
@@ -37,28 +38,10 @@ def get_projection(lidar: Lidar, camera: Camera) -> Tuple[np.array, List[Tuple]]
     return np.array(points, dtype=points[0].dtype), projection
 
 
-def get_projection_img(camera: Camera, lidar: Lidar, intensity=False, static_color=None, max_range_factor=0.5,
-                       raw_image=True):
-    if intensity:
-        highlight = 'intensity'
-    elif 'view' in lidar.info.name:
-        highlight = 'y'
-    else:
-        highlight = 'range'
-
-    # Original projection
-    pts, proj = get_projection(lidar, camera)
-
-    # Display original projection
-    proj_img = plot_points_on_image(camera, proj, pts[highlight], static_color=static_color,
-                                    max_range_factor=max_range_factor, raw_image=raw_image)
-    return proj_img
-
-
 def plot_points_on_image(camera, points, values, cmap_name="inferno", radius=2, static_color=None,
                          max_range_factor=0.5, raw_image=True):
     if raw_image:
-        rect_img = img_fkt.get_rect_img(camera)
+        rect_img = get_rect_img(camera)
     else:
         rect_img = camera.image.image
 
@@ -78,3 +61,18 @@ def plot_points_on_image(camera, points, values, cmap_name="inferno", radius=2, 
             color = static_color
         draw.ellipse([(x - radius, y - radius), (x + radius, y + radius)], fill=color)
     return rect_img
+
+
+def get_projection_img(camera: Camera, lidar: Lidar, intensity=False, static_color=None, max_range_factor=0.5,
+                       raw_image=True):
+    highlight = 'intensity' if intensity else 'range'
+
+    pts, proj = get_projection(lidar, camera)
+
+    # Prüfe, ob das gewünschte Highlight existiert; NUR FÜR ALTE DATEN NOTWENDIG
+    if highlight not in pts:
+        pts[highlight] = np.sqrt(pts['x'] ** 2 + pts['y'] ** 2 + pts['z'] ** 2)
+
+    proj_img = plot_points_on_image(camera, proj, pts[highlight], static_color=static_color,
+                                    max_range_factor=max_range_factor, raw_image=raw_image)
+    return proj_img

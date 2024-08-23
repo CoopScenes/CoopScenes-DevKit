@@ -1,6 +1,6 @@
 import hashlib
 import dill
-from ameisedataset.miscellaneous import INT_LENGTH
+from aeifdataset.miscellaneous import INT_LENGTH
 
 
 def compute_checksum(data):

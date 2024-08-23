@@ -1,6 +1,6 @@
 from typing import Optional
-from ameisedataset.data import Camera, Lidar, IMU, GNSS, Dynamics
-from ameisedataset.miscellaneous import serialize, deserialize, INT_LENGTH
+from aeifdataset.data import Camera, Lidar, IMU, GNSS, Dynamics, VehicleInformation, TowerInformation
+from aeifdataset.miscellaneous import serialize, deserialize, INT_LENGTH, obj_to_bytes, obj_from_bytes, read_data_block
 
 
 class VisionSensorsVeh:
@@ -100,18 +100,21 @@ class LaserSensorsTow:
 
 
 class Tower:
-    def __init__(self):
+    def __init__(self, info: Optional[TowerInformation] = None):
+        self.info = info
         self.cameras: VisionSensorsTow = VisionSensorsTow()
         self.lidars: LaserSensorsTow = LaserSensorsTow()
         self.GNSS: Optional[GNSS] = GNSS()
 
     def to_bytes(self):
-        tower_bytes = self.cameras.to_bytes() + self.lidars.to_bytes() + serialize(self.GNSS)
+        tower_bytes = obj_to_bytes(self.info) + self.cameras.to_bytes() + self.lidars.to_bytes() + serialize(self.GNSS)
         return len(tower_bytes).to_bytes(INT_LENGTH, 'big') + tower_bytes
 
     @classmethod
     def from_bytes(cls, data) -> 'Tower':
         instance = cls()
+        info_bytes, data = read_data_block(data)
+        setattr(instance, 'info', obj_from_bytes(info_bytes))
         instance.cameras, data = VisionSensorsTow.from_bytes(data)
         instance.lidars, data = LaserSensorsTow.from_bytes(data)
         instance.GNSS, _ = deserialize(data, GNSS)
@@ -119,7 +122,8 @@ class Tower:
 
 
 class Vehicle:
-    def __init__(self):
+    def __init__(self, info: Optional[VehicleInformation] = None):
+        self.info = info
         self.cameras: VisionSensorsVeh = VisionSensorsVeh()
         self.lidars: LaserSensorsVeh = LaserSensorsVeh()
         self.IMU: IMU = IMU()
@@ -127,13 +131,16 @@ class Vehicle:
         self.DYNAMICS: Dynamics = Dynamics()
 
     def to_bytes(self):
-        vehicle_bytes = self.cameras.to_bytes() + self.lidars.to_bytes() + serialize(self.IMU) + serialize(
+        vehicle_bytes = obj_to_bytes(self.info) + self.cameras.to_bytes() + self.lidars.to_bytes() + serialize(
+            self.IMU) + serialize(
             self.GNSS) + serialize(self.DYNAMICS)
         return len(vehicle_bytes).to_bytes(INT_LENGTH, 'big') + vehicle_bytes
 
     @classmethod
     def from_bytes(cls, data) -> 'Vehicle':
         instance = cls()
+        info_bytes, data = read_data_block(data)
+        setattr(instance, 'info', obj_from_bytes(info_bytes))
         instance.cameras, data = VisionSensorsVeh.from_bytes(data)
         instance.lidars, data = LaserSensorsVeh.from_bytes(data)
         instance.IMU, data = deserialize(data, IMU)

@@ -2,8 +2,8 @@ import os
 import glob
 
 from typing import List, Optional
-from ameisedataset.data import *
-from ameisedataset.miscellaneous import InvalidFileTypeError, obj_to_bytes, obj_from_bytes, INT_LENGTH
+from aeifdataset.data import *
+from aeifdataset.miscellaneous import InvalidFileTypeError, obj_to_bytes, obj_from_bytes, INT_LENGTH
 
 
 class DataRecord:

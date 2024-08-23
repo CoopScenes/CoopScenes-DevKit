@@ -1,20 +1,19 @@
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
 import open3d as o3d
 from typing import Optional
 
-from ameisedataset.data import Lidar, Camera
-import ameisedataset.utils.fusion_functions as ff
-import ameisedataset.utils.image_functions as imf
+from aeifdataset.data import Lidar, Camera
+from aeifdataset.utils import get_projection_img
+from aeifdataset.utils import get_depth_map
 
 
 def show_disparity_map(camera_left, camera_right, cmap_name="viridis", max_value=40):
     # Get the colormap
     cmap = plt.get_cmap(cmap_name)
 
-    disparity_map = imf.get_depth_map(camera_left, camera_right)
+    disparity_map = get_depth_map(camera_left, camera_right)
 
     # Set the min and max values for normalization
     val_min = np.min(disparity_map)
@@ -65,17 +64,17 @@ def show_points(lidar: Lidar):
 def show_projection(camera: Camera, lidar: Lidar, lidar2: Optional[Lidar] = None, lidar3: Optional[Lidar] = None,
                     static_color=None, static_color2=None,
                     static_color3=None, max_range_factor=0.5, intensity=False):
-    camera.image.image = ff.get_projection_img(camera, lidar, intensity, static_color, max_range_factor)
+    camera.image.image = get_projection_img(camera, lidar, intensity, static_color, max_range_factor)
     if lidar2 is not None:
-        camera.image.image = ff.get_projection_img(camera, lidar2, intensity, static_color2, max_range_factor, False)
+        camera.image.image = get_projection_img(camera, lidar2, intensity, static_color2, max_range_factor, False)
     if lidar3 is not None:
-        camera.image.image = ff.get_projection_img(camera, lidar3, intensity, static_color3, max_range_factor, False)
+        camera.image.image = get_projection_img(camera, lidar3, intensity, static_color3, max_range_factor, False)
     camera.image.image.show()
 
 
 def show_tf_correction(camera: Camera, lidar: Lidar, roll_correction, pitch_correction, yaw_correction, intensity=False,
                        static_color=None, max_range_factor=0.5):
-    proj_img = ff.get_projection_img(camera, lidar, intensity, static_color, max_range_factor)
+    proj_img = get_projection_img(camera, lidar, intensity, static_color, max_range_factor)
 
     # Adjust extrinsic parameters
     x, y, z = camera.info.extrinsic.xyz
@@ -84,7 +83,7 @@ def show_tf_correction(camera: Camera, lidar: Lidar, roll_correction, pitch_corr
     camera.info.extrinsic.rpy = np.array([roll + roll_correction, pitch + pitch_correction, yaw + yaw_correction])
 
     # Display corrected projection
-    proj_img_corrected = ff.get_projection_img(camera, lidar, intensity, static_color, max_range_factor)
+    proj_img_corrected = get_projection_img(camera, lidar, intensity, static_color, max_range_factor)
 
     fig, axes = plt.subplots(1, 2, figsize=(40, 26))
 

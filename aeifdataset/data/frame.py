@@ -1,10 +1,10 @@
 from decimal import Decimal
-from ameisedataset.miscellaneous import obj_to_bytes, obj_from_bytes, read_data_block
-from ameisedataset.data import Tower, Vehicle, VisionSensorsVeh, VisionSensorsTow, LaserSensorsVeh, LaserSensorsTow
+from aeifdataset.miscellaneous import obj_to_bytes, obj_from_bytes, read_data_block
+from aeifdataset.data import Tower, Vehicle, VisionSensorsVeh, VisionSensorsTow, LaserSensorsVeh, LaserSensorsTow
 
 
 class Frame:
-    def __init__(self, frame_id: int, timestamp: Decimal):
+    def __init__(self, frame_id: int, timestamp: Decimal, version: float):
         """
         Initializes the Frame object with the provided frame ID and timestamp.
         Sets default values for cameras and lidar attributes.
@@ -16,10 +16,11 @@ class Frame:
         self.timestamp: Decimal = timestamp
         self.vehicle: Vehicle = Vehicle()
         self.tower: Tower = Tower()
+        self.version: float = version
 
     def to_bytes(self) -> bytes:
         # dump meta info like timestamp
-        meta_bytes = obj_to_bytes([self.frame_id, self.timestamp])
+        meta_bytes = obj_to_bytes([self.frame_id, self.timestamp, self.version])
         # vehicle bytes
         veh_bytes = self.vehicle.to_bytes()
         # tower bytes
@@ -37,7 +38,7 @@ class Frame:
         # load meta
         meta_data = obj_from_bytes(meta_bytes)
         # create object with metadata
-        frame = cls(frame_id=meta_data[0], timestamp=meta_data[1])
+        frame = cls(frame_id=meta_data[0], timestamp=meta_data[1], version=meta_data[2])
         # vehicle content
         frame.vehicle = Vehicle.from_bytes(vehicle_bytes)
         # tower content

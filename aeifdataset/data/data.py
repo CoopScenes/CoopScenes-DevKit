@@ -4,7 +4,8 @@ from typing import Tuple, Optional, Dict
 from decimal import Decimal
 from datetime import datetime, timedelta, timezone
 from PIL import Image as PilImage
-from ameisedataset.miscellaneous import read_data_block
+
+from aeifdataset.miscellaneous import read_data_block
 
 
 def _convert_unix_to_utc(unix_timestamp_ns: Decimal, utc_offset_hours: int = 2) -> str:
@@ -42,6 +43,16 @@ class Velocity:
         self.covariance: Optional[np.array] = covariance
 
 
+class Heading:
+    def __init__(self,
+                 timestamp: Optional[Decimal] = None,
+                 orientation: Optional[np.array] = None,
+                 covariance: Optional[np.array] = None):
+        self.timestamp: Optional[Decimal] = timestamp
+        self.orientation: Optional[np.array] = orientation
+        self.covariance: Optional[np.array] = covariance
+
+
 class Motion:
     def __init__(self,
                  timestamp: Optional[Decimal] = None,
@@ -61,36 +72,32 @@ class Motion:
 
 
 class Position:
-    class NavSatFixStatus(Enum):
-        NO_FIX = -1
-        FIX = 0
-        SBAS_FIX = 1
-        GBAS_FIX = 2
+    """
+    Represents the position information including timestamp, latitude, longitude, altitude,
+    status, and covariance data.
+    """
 
-    class CovarianceType(Enum):
-        UNKNOWN = 0
-        APPROXIMATED = 1
-        DIAGONAL_KNOWN = 2
-        KNOWN = 3
-
-    def __init__(self, timestamp: Optional[Decimal] = None, status: Optional[NavSatFixStatus] = None,
+    def __init__(self, timestamp: Optional[Decimal] = None, status: Optional[str] = None,
                  services: Optional[Dict[str, Optional[bool]]] = None, latitude: Optional[Decimal] = None,
                  longitude: Optional[Decimal] = None, altitude: Optional[Decimal] = None,
-                 covariance: Optional[np.array] = None, covariance_type: Optional[CovarianceType] = None):
+                 covariance: Optional[np.array] = None, covariance_type: Optional[str] = None):
         self.timestamp: Optional[Decimal] = timestamp
-        self.status = status
+        self.status: Optional[str] = status
         self.services: Optional[Dict[str, Optional[bool]]] = self.init_services(services)
         self.latitude: Optional[Decimal] = latitude
         self.longitude: Optional[Decimal] = longitude
         self.altitude: Optional[Decimal] = altitude
         self.covariance: Optional[np.array] = covariance
-        self.covariance_type = covariance_type
+        self.covariance_type: Optional[str] = covariance_type
 
     def __iter__(self):
         return iter((self.latitude, self.longitude, self.timestamp))
 
     @staticmethod
     def init_services(services):
+        """
+        Initializes the services dictionary with default values for GPS, Glonass, Galileo, and Baidou.
+        """
         default_services = {'GPS': None, 'Glonass': None, 'Galileo': None, 'Baidou': None}
         if services is None:
             return default_services

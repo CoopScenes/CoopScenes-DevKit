@@ -1,4 +1,4 @@
-from ameisedataset.data import Lidar, Camera, IMU, GNSS
+from aeifdataset.data import Lidar, Camera, IMU, GNSS
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from typing import Union

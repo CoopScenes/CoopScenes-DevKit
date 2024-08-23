@@ -1,6 +1,5 @@
-from ameisedataset import DataRecord
-import ameisedataset.utils.visualisation as viz
-import ameisedataset.utils.image_functions as imf
+from aeifdataset import DataRecord
+from aeifdataset.utils import visualisation as vis
 
 # id04390_2024-07-18_18-11-45.4mse
 # id03960_2024-07-18_18-11-02.4mse
@@ -10,8 +9,8 @@ import ameisedataset.utils.image_functions as imf
 
 # id09700_2024-07-18_18-20-36.4mse
 
-dataloader = DataRecord("/media/ameise/Extreme SSD/datasets/record_1/packed/id09940_2024-07-18_18-21-00.4mse")
-frame = dataloader[9]
+dataloader = DataRecord("/mnt/dataset/record_1/packed_new/id00026_2024-07-18_18-04-29.4mse")
+frame = dataloader[0]
 back_left = frame.vehicle.cameras.BACK_LEFT
 front_left = frame.vehicle.cameras.FRONT_LEFT
 stereo_left = frame.vehicle.cameras.STEREO_LEFT
@@ -30,7 +29,15 @@ l_view_1 = frame.tower.lidars.VIEW_1
 l_view_2 = frame.tower.lidars.VIEW_2
 upper_platform = frame.tower.lidars.UPPER_PLATFORM
 
-viz.show_projection(stereo_left, top, left, right, static_color='blue', static_color2='red', static_color3='yellow')
+raw_image = back_left._image_raw
+
+rectified_image = back_left.image
+
+rectified_image.show()
+raw_image.show()
+
+pass
+# vis.show_projection(c_view_2, upper_platform, l_view_2, static_color='blue', static_color2='red')
 # viz.show_projection(back_left, left)
 # viz.show_projection(front_left, left)
 # viz.show_projection(stereo_left, top)

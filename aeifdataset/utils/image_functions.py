@@ -1,22 +1,24 @@
 import numpy as np
 from PIL import Image as PilImage
-from ameisedataset.data import Camera, Image
+
+from aeifdataset.data import CameraInformation
+from aeifdataset.data import Camera, Image
 import cv2
 
 
-def get_rect_img(camera: Camera):
+def get_rect_img(image: Image, info: CameraInformation):
     """Rectify the provided image using camera information."""
     # Init and calculate rectification matrix
-    mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix=camera.info.camera_mtx,
-                                             distCoeffs=camera.info.distortion_mtx[:-1],
-                                             R=camera.info.rectification_mtx,
-                                             newCameraMatrix=camera.info.projection_mtx,
-                                             size=camera.info.shape,
+    mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix=info.camera_mtx,
+                                             distCoeffs=info.distortion_mtx[:-1],
+                                             R=info.rectification_mtx,
+                                             newCameraMatrix=info.projection_mtx,
+                                             size=info.shape,
                                              m1type=cv2.CV_16SC2)
     # Apply matrix
-    rectified_image = cv2.remap(np.array(camera.image.image), mapx, mapy, interpolation=cv2.INTER_LANCZOS4)
+    rectified_image = cv2.remap(np.array(image.image), mapx, mapy, interpolation=cv2.INTER_LANCZOS4)
 
-    return Image(PilImage.fromarray(rectified_image), camera.image.timestamp)
+    return Image(PilImage.fromarray(rectified_image), image.timestamp)
 
 
 def get_depth_map(camera_left: Camera, camera_right: Camera) -> np.ndarray:
