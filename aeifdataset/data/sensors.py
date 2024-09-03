@@ -16,7 +16,7 @@ class Camera:
     def image(self) -> PilImage:
         from aeifdataset.utils import get_rect_img
         if self._image_raw is not None:
-            return get_rect_img(self._image_raw, self.info)
+            return get_rect_img(self)
         raise AttributeError("Image is not set.")
 
     def __getattr__(self, attr):

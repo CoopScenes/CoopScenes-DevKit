@@ -1,5 +1,7 @@
 from aeifdataset import DataRecord
 from aeifdataset.utils import visualisation as vis
+from aeifdataset.utils import image_functions as imf
+import os
 
 # id04390_2024-07-18_18-11-45.4mse
 # id03960_2024-07-18_18-11-02.4mse
@@ -9,8 +11,13 @@ from aeifdataset.utils import visualisation as vis
 
 # id09700_2024-07-18_18-20-36.4mse
 
-dataloader = DataRecord("/mnt/dataset/record_1/packed_new/id00026_2024-07-18_18-04-29.4mse")
+
+dataloader = DataRecord("/mnt/dataset/record_1/packed/id06900_2024-07-18_18:15:56.4mse")
 frame = dataloader[0]
+output_path = '/mnt/dataset/record_1/png'
+imf.save_all_camera_images(frame, output_path)
+
+'''
 back_left = frame.vehicle.cameras.BACK_LEFT
 front_left = frame.vehicle.cameras.FRONT_LEFT
 stereo_left = frame.vehicle.cameras.STEREO_LEFT
@@ -29,12 +36,7 @@ l_view_1 = frame.tower.lidars.VIEW_1
 l_view_2 = frame.tower.lidars.VIEW_2
 upper_platform = frame.tower.lidars.UPPER_PLATFORM
 
-raw_image = back_left._image_raw
-
-rectified_image = back_left.image
-
-rectified_image.show()
-raw_image.show()
+imf.save_image(back_left._image_raw, '/mnt/dataset/record_1/png', '_back_left',back_left.info)
 
 pass
 # vis.show_projection(c_view_2, upper_platform, l_view_2, static_color='blue', static_color2='red')
@@ -45,3 +47,4 @@ pass
 # viz.show_projection(back_right, right)
 
 # viz.show_disparity_map(stereo_left, stereo_right)
+'''

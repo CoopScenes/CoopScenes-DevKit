@@ -1,35 +1,10 @@
 import numpy as np
-from enum import Enum
 from typing import Tuple, Optional, Dict
 from decimal import Decimal
 from datetime import datetime, timedelta, timezone
 from PIL import Image as PilImage
 
-from aeifdataset.miscellaneous import read_data_block
-
-
-def _convert_unix_to_utc(unix_timestamp_ns: Decimal, utc_offset_hours: int = 2) -> str:
-    """
-    Convert a Unix timestamp (in nanoseconds as Decimal) to a human-readable UTC string with a timezone offset.
-    This function also displays milliseconds, microseconds, and nanoseconds.
-    Parameters:
-    - unix_timestamp_ns: Unix timestamp in nanoseconds as a Decimal.
-    - offset_hours: UTC timezone offset in hours.
-    Returns:
-    - Human-readable UTC string with the given timezone offset and extended precision.
-    """
-    # Convert the Decimal to integer for calculations
-    unix_timestamp_ns = int(unix_timestamp_ns)
-    # Extract the whole seconds and the fractional part
-    timestamp_s, fraction_ns = divmod(unix_timestamp_ns, int(1e9))
-    milliseconds, remainder_ns = divmod(fraction_ns, int(1e6))
-    microseconds, nanoseconds = divmod(remainder_ns, int(1e3))
-    # Convert to datetime object and apply the offset
-    dt = datetime.fromtimestamp(timestamp_s, timezone.utc) + timedelta(hours=utc_offset_hours)
-    # Create the formatted string with extended precision
-    formatted_time = dt.strftime('%Y-%m-%d %H:%M:%S')
-    extended_precision = f".{milliseconds:03}{microseconds:03}{nanoseconds:03}"
-    return formatted_time + extended_precision
+from aeifdataset.miscellaneous import read_data_block, unix_to_utc
 
 
 class Velocity:
@@ -155,15 +130,8 @@ class Image:
         img_instance.image = PilImage.frombytes("RGB", shape, img_bytes)
         return img_instance
 
-    def get_timestamp(self, utc=2):
-        """
-        Retrieves the UTC timestamp of the points.
-        Args:
-            utc (int, optional): Timezone offset in hours. Default is 2.
-        Returns:
-            str: The UTC timestamp of the points.
-        """
-        return _convert_unix_to_utc(self.timestamp, utc_offset_hours=utc)
+    def get_timestamp(self, precision='ns', timezone_offset_hours=2):
+        return unix_to_utc(self.timestamp, precision=precision, timezone_offset_hours=timezone_offset_hours)
 
 
 class Points:
@@ -224,12 +192,5 @@ class Points:
         pts_instance.points = np.frombuffer(pts_bytes, dtype=dtype)
         return pts_instance
 
-    def get_timestamp(self, utc=2):
-        """
-        Retrieves the UTC timestamp of the points.
-        Args:
-            utc (int, optional): Timezone offset in hours. Default is 2.
-        Returns:
-            str: The UTC timestamp of the points.
-        """
-        return _convert_unix_to_utc(self.timestamp, utc_offset_hours=utc)
+    def get_timestamp(self, precision='ns', timezone_offset_hours=2):
+        return unix_to_utc(self.timestamp, precision=precision, timezone_offset_hours=timezone_offset_hours)

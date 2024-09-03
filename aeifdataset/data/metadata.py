@@ -1,4 +1,4 @@
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict
 import numpy as np
 
 
@@ -25,6 +25,9 @@ class TransformationMtx:
         self.rotation = rotation
         self.translation = translation
 
+    def __str__(self):
+        return f"TransformationMtx(rotation={self.rotation.tolist()}, translation={self.translation.tolist()})"
+
 
 class ROI:
     """
@@ -40,6 +43,9 @@ class ROI:
 
     def __iter__(self):
         return iter((self.x_offset, self.y_offset, self.width, self.height))
+
+    def __str__(self):
+        return f"ROI(x_offset={self.x_offset}, y_offset={self.y_offset}, width={self.width}, height={self.height})"
 
 
 class VehicleInformation:
@@ -95,6 +101,25 @@ class CameraInformation:
         self.exposure_time = exposure_time
         self.extrinsic = extrinsic
         self.stereo_transform = stereo_transform
+
+    def to_dict(self) -> Dict[str, str]:
+        """Konvertiert das Objekt in ein Dictionary."""
+        info_dict = vars(self).copy()
+        for key, value in info_dict.items():
+            if isinstance(value, np.ndarray):
+                info_dict[key] = str(value.tolist())
+            elif isinstance(value, (ROI, Pose, TransformationMtx)):
+                info_dict[key] = str(value)
+            elif isinstance(value, tuple):
+                info_dict[key] = ', '.join(map(str, value))
+            elif isinstance(value, int):
+                info_dict[key] = str(value)
+            elif isinstance(value, float):
+                info_dict[key] = str(value)
+            elif value is None:
+                info_dict[key] = "N/A"
+
+        return info_dict
 
 
 class LidarInformation:

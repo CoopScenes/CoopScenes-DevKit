@@ -1,5 +1,5 @@
 from decimal import Decimal
-from aeifdataset.miscellaneous import obj_to_bytes, obj_from_bytes, read_data_block
+from aeifdataset.miscellaneous import obj_to_bytes, obj_from_bytes, read_data_block, unix_to_utc
 from aeifdataset.data import Tower, Vehicle, VisionSensorsVeh, VisionSensorsTow, LaserSensorsVeh, LaserSensorsTow
 
 
@@ -65,3 +65,6 @@ class Frame:
                     # check for len(obj.attr)
                     unfilled_fields.append(attr_value)
         return True if not unfilled_fields else unfilled_fields
+
+    def get_timestamp(self, precision='s', timezone_offset_hours=2):
+        return unix_to_utc(self.timestamp, precision=precision, timezone_offset_hours=timezone_offset_hours)

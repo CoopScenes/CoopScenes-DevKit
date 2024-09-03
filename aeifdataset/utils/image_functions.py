@@ -1,24 +1,27 @@
 import numpy as np
 from PIL import Image as PilImage
+from PIL.PngImagePlugin import PngInfo
+from typing import Optional
 
 from aeifdataset.data import CameraInformation
 from aeifdataset.data import Camera, Image
 import cv2
+import os
 
 
-def get_rect_img(image: Image, info: CameraInformation):
+def get_rect_img(camera: Camera):
     """Rectify the provided image using camera information."""
     # Init and calculate rectification matrix
-    mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix=info.camera_mtx,
-                                             distCoeffs=info.distortion_mtx[:-1],
-                                             R=info.rectification_mtx,
-                                             newCameraMatrix=info.projection_mtx,
-                                             size=info.shape,
+    mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix=camera.info.camera_mtx,
+                                             distCoeffs=camera.info.distortion_mtx[:-1],
+                                             R=camera.info.rectification_mtx,
+                                             newCameraMatrix=camera.info.projection_mtx,
+                                             size=camera.info.shape,
                                              m1type=cv2.CV_16SC2)
     # Apply matrix
-    rectified_image = cv2.remap(np.array(image.image), mapx, mapy, interpolation=cv2.INTER_LANCZOS4)
+    rectified_image = cv2.remap(np.array(camera._image_raw.image), mapx, mapy, interpolation=cv2.INTER_LANCZOS4)
 
-    return Image(PilImage.fromarray(rectified_image), image.timestamp)
+    return Image(PilImage.fromarray(rectified_image), camera._image_raw.timestamp)
 
 
 def get_depth_map(camera_left: Camera, camera_right: Camera) -> np.ndarray:
@@ -50,3 +53,56 @@ def get_depth_map(camera_left: Camera, camera_right: Camera) -> np.ndarray:
     b = abs(camera_right.info.stereo_transform.translation[0]) * 10 ** 3
     depth_map = f * b / safe_disparity
     return depth_map
+
+
+def save_image(image: Image, output_path: str, suffix: str = '', metadata: Optional[CameraInformation] = None):
+    output_file = os.path.join(output_path, f'{image.get_timestamp()}{suffix}.png')
+
+    info = PngInfo()
+    if metadata:
+        info_dict = metadata.to_dict()
+        for key, value in info_dict.items():
+            info.add_text(key, value)
+
+    image.save(output_file, 'PNG', pnginfo=info, compress_level=0)
+
+
+def save_all_camera_images(frame, output_path: str):
+    # Iterate through all attributes in the 'vehicle.cameras' and 'tower.cameras' objects
+    for camera_attr in dir(frame.vehicle.cameras):
+        camera = getattr(frame.vehicle.cameras, camera_attr, None)
+        if camera and hasattr(camera, '_image_raw'):
+            try:
+                image = camera._image_raw
+                metadata = camera.info
+                suffix = f'_{camera_attr.lower()}'
+                save_image(image, output_path, suffix, metadata)
+            except AttributeError as e:
+                print(f"Error processing {camera_attr}: {e}")
+            except Exception as e:
+                print(f"Unexpected error processing {camera_attr}: {e}")
+
+    # Do the same for 'tower.cameras' if necessary
+    for camera_attr in dir(frame.tower.cameras):
+        camera = getattr(frame.tower.cameras, camera_attr, None)
+        if camera and hasattr(camera, '_image_raw'):
+            try:
+                image = camera._image_raw
+                metadata = camera.info
+                suffix = f'_{camera_attr.lower()}'
+                save_image(image, output_path, suffix, metadata)
+            except AttributeError as e:
+                print(f"Error processing {camera_attr}: {e}")
+            except Exception as e:
+                print(f"Unexpected error processing {camera_attr}: {e}")
+
+
+def load_image_with_metadata(file_path: str):
+    image = PilImage.open(file_path)
+
+    metadata = image.info
+    metadata_dict = {}
+    for key, value in metadata.items():
+        metadata_dict[key] = value.decode('utf-8') if isinstance(value, bytes) else value
+
+    return image, metadata_dict
