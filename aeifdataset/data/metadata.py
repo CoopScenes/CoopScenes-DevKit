@@ -188,20 +188,11 @@ class LidarInformation:
             'itemsize': 48
         }
 
-    def _blickfeld_dtype_structure_new(self) -> dict:
+    def _blickfeld_dtype_structure(self) -> dict:
         """Return the dtype structure for 'Blickfeld' models."""
         return {
             'names': ['x', 'y', 'z', 'range', 'intensity', 'point_id', 'point_time_offset'],
             'formats': ['<f4', '<f4', '<f4', '<f4', '<u4', '<u4', '<u4'],
             'offsets': [0, 4, 8, 12, 16, 20, 24],
             'itemsize': 28  # The total size (in bytes) of the structure
-        }
-
-    def _blickfeld_dtype_structure(self) -> dict:
-        """Return the dtype structure for 'Blickfeld' models."""
-        return {
-            'names': ['x', 'y', 'z', 'intensity', 'point_id'],
-            'formats': ['<f4', '<f4', '<f4', '<u4', '<u4'],
-            'offsets': [0, 4, 8, 12, 16],
-            'itemsize': 20  # The total size (in bytes) of the structure
         }
