@@ -46,6 +46,7 @@ def get_projection(lidar: Lidar, camera: Camera) -> Tuple[np.array, List[Tuple]]
 
     projection = []
     points = []
+    # TODO: change to matrix operation
     for point in lidar.points.points:
         point_vals = np.array(point.tolist()[:3])
         # Transform points to new coordinate system
