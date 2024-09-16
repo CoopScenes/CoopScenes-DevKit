@@ -12,6 +12,7 @@ Functions:
 """
 from typing import Tuple, List, Optional
 from PIL import ImageDraw
+from PIL import Image as PilImage
 import numpy as np
 import matplotlib
 from aeifdataset.data import Lidar, Camera

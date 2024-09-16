@@ -157,7 +157,7 @@ def save_all_camera_images(frame, output_path: str):
                 print(f"Unexpected error processing {camera_attr}: {e}")
 
 
-def load_image_with_metadata(file_path: str) -> Tuple[PilImage, dict]:
+def load_image_with_metadata(file_path: str) -> Tuple[PilImage.Image, dict]:
     """Load an image along with its metadata.
 
     This function loads an image file and extracts any embedded metadata.
