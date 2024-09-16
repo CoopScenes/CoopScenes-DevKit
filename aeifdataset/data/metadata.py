@@ -1,14 +1,47 @@
+"""
+This module defines classes representing metadata for various sensors and components in an
+autonomous vehicle system. These classes encapsulate detailed information about the vehicle,
+sensor configuration, and their poses within a coordinate system.
+
+Classes:
+    Pose: Represents the position and orientation of a sensor in 3D space.
+    TransformationMtx: Represents a transformation matrix with separate rotation and translation components.
+    ROI: Represents a Region of Interest (ROI) within an image or sensor frame.
+    VehicleInformation: Encapsulates metadata about the vehicle, including model name and pose.
+    TowerInformation: Encapsulates metadata about a sensor tower, including model name and pose.
+    DynamicsInformation: Holds information about the source of velocity and heading data for vehicle dynamics.
+    IMUInformation: Represents metadata about an IMU sensor, including its model name and extrinsic pose.
+    GNSSInformation: Represents metadata about a GNSS sensor, including its model name and extrinsic pose.
+    CameraInformation: Provides detailed metadata for a camera sensor, including intrinsic and extrinsic parameters.
+    LidarInformation: Provides detailed metadata for a Lidar sensor, including intrinsic and extrinsic parameters,
+                      varying based on whether it is a Blickfeld or Ouster sensor.
+
+Each class in this module is designed to store and manage detailed metadata, which is crucial for
+sensor calibration, sensor fusion, and the overall understanding of sensor placement and characteristics
+in autonomous vehicle systems.
+"""
 from typing import Tuple, Optional, Dict
 import numpy as np
 
 
 class Pose:
-    """
-    Describes the position of a sensor in terms of its position and rotation relative to
-    the reference coordinate system (Top_LiDAR).
+    """Class representing the position and rotation of a sensor in 3D space.
+
+    This class describes the position (xyz) and rotation (rpy) of a sensor
+    relative to the reference coordinate system.
+
+    Attributes:
+        xyz (Optional[np.array]): The position in the reference coordinate system (x, y, z).
+        rpy (Optional[np.array]): The rotation in roll, pitch, and yaw (r, p, y).
     """
 
     def __init__(self, xyz: Optional[np.array] = None, rpy: Optional[np.array] = None):
+        """Initialize a Pose object with position and rotation data.
+
+        Args:
+            xyz (Optional[np.array]): The position in the reference coordinate system (x, y, z).
+            rpy (Optional[np.array]): The rotation in roll, pitch, and yaw (r, p, y).
+        """
         self.xyz = xyz
         self.rpy = rpy
 
@@ -17,11 +50,23 @@ class Pose:
 
 
 class TransformationMtx:
-    """
-    Represents a transformation matrix with separate rotation and translation components.
+    """Class representing a transformation matrix with rotation and translation components.
+
+    This class describes a transformation matrix that separates the rotation
+    and translation components for transforming between coordinate systems.
+
+    Attributes:
+        rotation (Optional[np.array]): The rotation matrix (3x3).
+        translation (Optional[np.array]): The translation vector (x, y, z).
     """
 
     def __init__(self, rotation: Optional[np.array] = None, translation: Optional[np.array] = None):
+        """Initialize a TransformationMtx object with rotation and translation data.
+
+        Args:
+            rotation (Optional[np.array]): The rotation matrix (3x3).
+            translation (Optional[np.array]): The translation vector (x, y, z).
+        """
         self.rotation = rotation
         self.translation = translation
 
@@ -30,12 +75,28 @@ class TransformationMtx:
 
 
 class ROI:
-    """
-    Represents a Region of Interest (ROI) defined by its offset and dimensions.
+    """Class representing a Region of Interest (ROI).
+
+    This class defines a region within an image or sensor frame, represented by
+    an offset and dimensions (width, height).
+
+    Attributes:
+        x_offset (Optional[int]): The x-coordinate of the top-left corner of the ROI.
+        y_offset (Optional[int]): The y-coordinate of the top-left corner of the ROI.
+        width (Optional[int]): The width of the ROI.
+        height (Optional[int]): The height of the ROI.
     """
 
     def __init__(self, x_off: Optional[int] = None, y_off: Optional[int] = None,
                  width: Optional[int] = None, height: Optional[int] = None):
+        """Initialize an ROI object with offset and dimensions.
+
+        Args:
+            x_off (Optional[int]): The x-coordinate of the top-left corner of the ROI.
+            y_off (Optional[int]): The y-coordinate of the top-left corner of the ROI.
+            width (Optional[int]): The width of the ROI.
+            height (Optional[int]): The height of the ROI.
+        """
         self.x_offset = x_off
         self.y_offset = y_off
         self.width = width
@@ -49,36 +110,121 @@ class ROI:
 
 
 class VehicleInformation:
+    """Class representing metadata about a vehicle.
+
+    Attributes:
+        model_name (Optional[str]): The model name of the vehicle.
+        extrinsic (Optional[Pose]): The extrinsic pose of the vehicle in the reference coordinate system.
+    """
+
     def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
+        """Initialize a VehicleInformation object.
+
+        Args:
+            model_name (Optional[str]): The model name of the vehicle.
+            extrinsic (Optional[Pose]): The extrinsic pose of the vehicle in the reference coordinate system.
+        """
         self.model_name = model_name
         self.extrinsic = extrinsic
 
 
 class TowerInformation:
+    """Class representing metadata about a sensor tower.
+
+    Attributes:
+        model_name (Optional[str]): The model name of the tower.
+        extrinsic (Optional[Pose]): The extrinsic pose of the tower in the reference coordinate system.
+    """
+
     def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
+        """Initialize a TowerInformation object.
+
+        Args:
+            model_name (Optional[str]): The model name of the tower.
+            extrinsic (Optional[Pose]): The extrinsic pose of the tower in the reference coordinate system.
+        """
         self.model_name = model_name
         self.extrinsic = extrinsic
 
 
 class DynamicsInformation:
+    """Class representing metadata about the dynamics of a vehicle.
+
+    Attributes:
+        velocity_source (Optional[str]): The source of velocity data (e.g., GNSS, IMU).
+        heading_source (Optional[str]): The source of heading data.
+    """
+
     def __init__(self, velocity_source: Optional[str] = None, heading_source: Optional[str] = None):
+        """Initialize a DynamicsInformation object.
+
+        Args:
+            velocity_source (Optional[str]): The source of velocity data.
+            heading_source (Optional[str]): The source of heading data.
+        """
         self.velocity_source = velocity_source
         self.heading_source = heading_source
 
 
 class IMUInformation:
+    """Class representing metadata about an IMU sensor.
+
+    Attributes:
+        model_name (Optional[str]): The model name of the IMU sensor.
+        extrinsic (Optional[Pose]): The extrinsic pose of the IMU sensor in the reference coordinate system.
+    """
+
     def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
+        """Initialize an IMUInformation object.
+
+        Args:
+            model_name (Optional[str]): The model name of the IMU sensor.
+            extrinsic (Optional[Pose]): The extrinsic pose of the IMU sensor in the reference coordinate system.
+        """
         self.model_name = model_name
         self.extrinsic = extrinsic
 
 
 class GNSSInformation:
+    """Class representing metadata about a GNSS sensor.
+
+    Attributes:
+        model_name (Optional[str]): The model name of the GNSS sensor.
+        extrinsic (Optional[Pose]): The extrinsic pose of the GNSS sensor in the reference coordinate system.
+    """
+
     def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
+        """Initialize a GNSSInformation object.
+
+        Args:
+            model_name (Optional[str]): The model name of the GNSS sensor.
+            extrinsic (Optional[Pose]): The extrinsic pose of the GNSS sensor in the reference coordinate system.
+        """
         self.model_name = model_name
         self.extrinsic = extrinsic
 
 
 class CameraInformation:
+    """Class representing metadata about a camera sensor.
+
+    Attributes:
+        name (str): The name of the camera.
+        model_name (Optional[str]): The model name of the camera.
+        shape (Optional[Tuple[int, int]]): The resolution of the camera (width, height).
+        distortion_type (Optional[str]): The type of lens distortion (e.g., radial, tangential).
+        camera_mtx (Optional[np.array]): The intrinsic camera matrix.
+        distortion_mtx (Optional[np.array]): The distortion matrix.
+        rectification_mtx (Optional[np.array]): The rectification matrix.
+        projection_mtx (Optional[np.array]): The projection matrix.
+        region_of_interest (Optional[ROI]): The region of interest within the camera's field of view.
+        camera_type (Optional[str]): The type of camera (e.g., monocular, stereo).
+        focal_length (Optional[int]): The focal length of the camera in mm.
+        aperture (Optional[int]): The aperture size of the camera in mm.
+        exposure_time (Optional[int]): The exposure time of the camera in microseconds.
+        extrinsic (Optional[Pose]): The extrinsic pose of the camera in the reference coordinate system.
+        stereo_transform (Optional[TransformationMtx]): The transformation matrix for stereo cameras.
+    """
+
     def __init__(self, name: str, model_name: Optional[str] = None, shape: Optional[Tuple[int, int]] = None,
                  distortion_type: Optional[str] = None, camera_mtx: Optional[np.array] = None,
                  distortion_mtx: Optional[np.array] = None, rectification_mtx: Optional[np.array] = None,
@@ -86,6 +232,25 @@ class CameraInformation:
                  camera_type: Optional[str] = None, focal_length: Optional[int] = None,
                  aperture: Optional[int] = None, exposure_time: Optional[int] = None,
                  extrinsic: Optional[Pose] = None, stereo_transform: Optional[TransformationMtx] = None):
+        """Initialize a CameraInformation object.
+
+        Args:
+            name (str): The name of the camera.
+            model_name (Optional[str]): The model name of the camera.
+            shape (Optional[Tuple[int, int]]): The resolution of the camera (width, height).
+            distortion_type (Optional[str]): The type of lens distortion.
+            camera_mtx (Optional[np.array]): The intrinsic camera matrix.
+            distortion_mtx (Optional[np.array]): The distortion matrix.
+            rectification_mtx (Optional[np.array]): The rectification matrix.
+            projection_mtx (Optional[np.array]): The projection matrix.
+            region_of_interest (Optional[ROI]): The region of interest within the camera's field of view.
+            camera_type (Optional[str]): The type of camera.
+            focal_length (Optional[int]): The focal length of the camera.
+            aperture (Optional[int]): The aperture size of the camera.
+            exposure_time (Optional[int]): The exposure time of the camera.
+            extrinsic (Optional[Pose]): The extrinsic pose of the camera in the reference coordinate system.
+            stereo_transform (Optional[TransformationMtx]): The transformation matrix for stereo cameras.
+        """
         self.name = name
         self.model_name = model_name
         self.shape = shape
@@ -103,7 +268,11 @@ class CameraInformation:
         self.stereo_transform = stereo_transform
 
     def to_dict(self) -> Dict[str, str]:
-        """Konvertiert das Objekt in ein Dictionary."""
+        """Convert the CameraInformation object into a dictionary.
+
+        Returns:
+            Dict[str, str]: The dictionary representation of the CameraInformation object.
+        """
         info_dict = vars(self).copy()
         for key, value in info_dict.items():
             if isinstance(value, np.ndarray):
@@ -118,14 +287,23 @@ class CameraInformation:
                 info_dict[key] = str(value)
             elif value is None:
                 info_dict[key] = "N/A"
-
         return info_dict
 
 
 class LidarInformation:
-    """
-    Represents the information related to a Lidar sensor. The structure and attributes vary depending on whether
-    the Lidar is a Blickfeld ('view' in name) or an Ouster sensor.
+    """Class representing metadata about a Lidar sensor.
+
+    Attributes:
+        name (str): The name of the Lidar sensor.
+        model_name (Optional[str]): The model name of the Lidar sensor.
+        extrinsic (Optional[Pose]): The extrinsic pose of the Lidar sensor.
+        vertical_fov (Optional[float]): The vertical field of view of the Lidar (for Blickfeld sensors).
+        horizontal_fov (Optional[float]): The horizontal field of view of the Lidar (for Blickfeld sensors).
+        beam_altitude_angles (Optional[np.array]): Beam altitude angles (for Ouster sensors).
+        beam_azimuth_angles (Optional[np.array]): Beam azimuth angles (for Ouster sensors).
+        lidar_origin_to_beam_origin_mm (Optional[np.array]): Distance from the Lidar origin to the beam origin in mm.
+        horizontal_scanlines (Optional[int]): The number of horizontal scanlines (for Ouster sensors).
+        vertical_scanlines (Optional[int]): The number of vertical scanlines (for Ouster sensors).
     """
 
     def __init__(self, name: str, model_name: Optional[str] = None, beam_altitude_angles: Optional[np.array] = None,
@@ -136,11 +314,28 @@ class LidarInformation:
                  extrinsic: Optional[Pose] = None, vertical_fov: Optional[float] = None,
                  horizontal_fov: Optional[float] = None, horizontal_angle_spacing: Optional[float] = None,
                  frame_mode: Optional[str] = None, scan_pattern: Optional[str] = None):
+        """Initialize a LidarInformation object.
+
+        Args:
+            name (str): The name of the Lidar sensor.
+            model_name (Optional[str]): The model name of the Lidar sensor.
+            beam_altitude_angles (Optional[np.array]): Beam altitude angles (for Ouster sensors).
+            beam_azimuth_angles (Optional[np.array]): Beam azimuth angles (for Ouster sensors).
+            lidar_origin_to_beam_origin_mm (Optional[np.array]): Distance from the Lidar origin to the beam origin in mm.
+            horizontal_scanlines (Optional[int]): The number of horizontal scanlines (for Ouster sensors).
+            vertical_scanlines (Optional[int]): The number of vertical scanlines (for Ouster sensors).
+            extrinsic (Optional[Pose]): The extrinsic pose of the Lidar sensor.
+            vertical_fov (Optional[float]): The vertical field of view of the Lidar (for Blickfeld sensors).
+            horizontal_fov (Optional[float]): The horizontal field of view of the Lidar (for Blickfeld sensors).
+            horizontal_angle_spacing (Optional[float]): The horizontal angle spacing (for Blickfeld sensors).
+            frame_mode (Optional[str]): The frame mode of the Lidar.
+            scan_pattern (Optional[str]): The scan pattern of the Lidar.
+        """
         self.name = name
         self.model_name = model_name
         self.extrinsic = extrinsic
 
-        # Set attributes and dtype based on sensor type
+        # Initialize attributes based on sensor type
         if 'view' in name.lower():
             self._initialize_blickfeld(vertical_fov, horizontal_fov, horizontal_angle_spacing, frame_mode, scan_pattern)
         else:
@@ -151,7 +346,7 @@ class LidarInformation:
     def _initialize_blickfeld(self, vertical_fov: Optional[float], horizontal_fov: Optional[float],
                               horizontal_angle_spacing: Optional[float], frame_mode: Optional[str],
                               scan_pattern: Optional[str]):
-        """Initialize attributes specific to Blickfeld sensors."""
+        """Initialize attributes specific to Blickfeld Lidar sensors."""
         self.vertical_fov = vertical_fov
         self.horizontal_fov = horizontal_fov
         self.horizontal_angle_spacing = horizontal_angle_spacing
@@ -163,7 +358,7 @@ class LidarInformation:
                            lidar_origin_to_beam_origin_mm: Optional[np.array], horizontal_scanlines: Optional[int],
                            vertical_scanlines: Optional[int], phase_lock_offset: Optional[int],
                            lidar_to_sensor_transform: Optional[np.array]):
-        """Initialize attributes specific to Ouster sensors."""
+        """Initialize attributes specific to Ouster Lidar sensors."""
         self.beam_altitude_angles = beam_altitude_angles
         self.beam_azimuth_angles = beam_azimuth_angles
         self.lidar_origin_to_beam_origin_mm = lidar_origin_to_beam_origin_mm
@@ -173,8 +368,9 @@ class LidarInformation:
         self.lidar_to_sensor_transform = lidar_to_sensor_transform
         self.dtype = np.dtype(self._os_dtype_structure())
 
-    def _os_dtype_structure(self) -> dict:
-        """Return the dtype structure for 'OS' (Ouster) models."""
+    @staticmethod
+    def _os_dtype_structure() -> dict:
+        """Return the dtype structure for 'OS' (Ouster) Lidar models."""
         return {
             'names': [
                 'x', 'y', 'z', 'intensity', 't',
@@ -188,8 +384,9 @@ class LidarInformation:
             'itemsize': 48
         }
 
-    def _blickfeld_dtype_structure(self) -> dict:
-        """Return the dtype structure for 'Blickfeld' models."""
+    @staticmethod
+    def _blickfeld_dtype_structure() -> dict:
+        """Return the dtype structure for 'Blickfeld' Lidar models."""
         return {
             'names': ['x', 'y', 'z', 'range', 'intensity', 'point_id', 'point_time_offset'],
             'formats': ['<f4', '<f4', '<f4', '<f4', '<u4', '<u4', '<u4'],

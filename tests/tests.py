@@ -1,4 +1,4 @@
-from aeifdataset import DataRecord
+from aeifdataset import Dataloader, DataRecord
 from aeifdataset.utils import visualisation as vis
 from aeifdataset.utils import image_functions as imf
 import os
@@ -12,11 +12,10 @@ import os
 # id09700_2024-07-18_18-20-36.4mse
 
 
-dataloader = DataRecord("/mnt/dataset/record_1/packed/id06900_2024-07-18_18:15:56.4mse")
-frame = dataloader[0]
-output_path = '/mnt/dataset/record_1/png'
-imf.save_all_camera_images(frame, output_path)
-
+dataloader = Dataloader("/media/slam/Extreme SSD/datasets/record_1/packed/")
+datarecord = dataloader[1]
+frame = datarecord[0]
+back_left = frame.vehicle.cameras.BACK_LEFT
 '''
 back_left = frame.vehicle.cameras.BACK_LEFT
 front_left = frame.vehicle.cameras.FRONT_LEFT

@@ -1,11 +1,45 @@
+"""
+This module provides a set of utility functions for handling various tasks such as time conversion,
+data serialization, and checksum computation. It includes functions for converting Unix timestamps
+to UTC strings, serializing and deserializing objects, computing and reading checksums, and handling
+byte streams.
+
+Functions:
+    unix_to_utc: Convert a Unix timestamp to a formatted UTC time string.
+    compute_checksum: Compute the SHA-256 checksum for a given data block.
+    read_checksum: Read and separate the SHA-256 checksum from a data stream.
+    read_data_block: Read a block of data from a byte stream, using a length prefix.
+    obj_to_bytes: Serialize an object to bytes using the Dill library.
+    obj_from_bytes: Deserialize an object from bytes using the Dill library.
+    serialize: Serialize an object to bytes with a length prefix.
+    deserialize: Deserialize a byte stream into an object using the class's `from_bytes()` method.
+"""
+from typing import Optional, Tuple
+from aeifdataset.miscellaneous import INT_LENGTH, SHA256_CHECKSUM_LENGTH
+from decimal import Decimal
+from datetime import datetime, timedelta
 import hashlib
 import dill
-from aeifdataset.miscellaneous import INT_LENGTH
-from decimal import Decimal
-from datetime import datetime, timedelta, timezone
 
 
-def unix_to_utc(unix_time: Decimal, precision='ns', timezone_offset_hours=2):
+def unix_to_utc(unix_time: Decimal, precision='ns', timezone_offset_hours=2) -> str:
+    """Convert a Unix timestamp to a formatted UTC time string.
+
+    This function converts a Unix timestamp (with nanosecond precision) to a
+    UTC time string. The result can be formatted with second or nanosecond
+    precision, and the function can adjust for a given timezone offset.
+
+    Args:
+        unix_time (Decimal): The Unix timestamp as a `Decimal`, representing time since epoch.
+        precision (str): The desired precision of the output ('ns' for nanoseconds, 's' for seconds). Defaults to 'ns'.
+        timezone_offset_hours (int): The timezone offset in hours to compute local time. Defaults to 2.
+
+    Returns:
+        str: The UTC time formatted as a string, with the specified precision.
+
+    Raises:
+        ValueError: If an unsupported precision is provided.
+    """
     # Convert the timestamp to nanosecond precision
     unix_time_str = str(unix_time).replace('.', '')
     unix_time_ns = Decimal(unix_time_str)
@@ -19,37 +53,107 @@ def unix_to_utc(unix_time: Decimal, precision='ns', timezone_offset_hours=2):
     local_time = utc_time + timedelta(hours=timezone_offset_hours)
 
     if precision == 'ns':
-        local_time_str = local_time.strftime('%Y-%m-%d_%H:%M:%S') + f'.{nanoseconds:09d}'
+        local_time_str = local_time.strftime('%Y-%m-%d_%H-%M-%S') + f'.{nanoseconds:09d}'
     elif precision == 's':
-        local_time_str = local_time.strftime('%Y-%m-%d_%H:%M:%S')
+        local_time_str = local_time.strftime('%Y-%m-%d_%H-%M-%S')
     else:
         raise ValueError("Precision must be 'ns' or 's'")
 
     return local_time_str
 
 
-def compute_checksum(data):
-    # calculates the has value of a given bytestream - SHA256
+def compute_checksum(data: bytes) -> bytes:
+    """Compute the SHA-256 checksum for a given data block.
+
+    This function takes a byte sequence and returns the SHA-256 hash.
+
+    Args:
+        data (bytes): The data for which the checksum is to be computed.
+
+    Returns:
+        bytes: The computed SHA-256 checksum.
+    """
     return hashlib.sha256(data).digest()
 
 
-def read_data_block(data, dtype_length: int = INT_LENGTH):
+def read_checksum(data: bytes) -> Tuple[bytes, bytes]:
+    """Read and separate the SHA-256 checksum from the data.
+
+    This function extracts the SHA-256 checksum from the start of a byte stream,
+    and returns the checksum along with the remaining data.
+
+    Args:
+        data (bytes): The byte stream that contains the checksum at the beginning.
+
+    Returns:
+        tuple[bytes, bytes]: A tuple where the first element is the extracted SHA-256 checksum,
+                             and the second element is the remaining data after the checksum.
+    """
+    return data[0:SHA256_CHECKSUM_LENGTH], data[SHA256_CHECKSUM_LENGTH:]
+
+
+def read_data_block(data: bytes, dtype_length: int = INT_LENGTH) -> Tuple[bytes, bytes]:
+    """Read a block of data from the given byte stream.
+
+    This function reads the first part of the byte stream that indicates the
+    length of the following data block. It then extracts that block of bytes.
+
+    Args:
+        data (bytes): The input byte stream.
+        dtype_length (int): The length of the size header in bytes. Defaults to INT_LENGTH.
+
+    Returns:
+        tuple[bytes, bytes]: The extracted data block and the remaining byte stream.
+    """
     data_len = int.from_bytes(data[0:dtype_length], 'big')
     data_block_bytes = data[dtype_length:dtype_length + data_len]
     return data_block_bytes, data[dtype_length + data_len:]
 
 
 def obj_to_bytes(obj) -> bytes:
+    """Serialize an object to bytes using Dill.
+
+    This function serializes an object into a byte stream using Dill. The
+    length of the serialized data is prepended as a header.
+
+    Args:
+        obj: The object to be serialized.
+
+    Returns:
+        bytes: The serialized byte representation of the object.
+    """
     obj_bytes = dill.dumps(obj)
     obj_bytes_len = len(obj_bytes).to_bytes(INT_LENGTH, 'big')
     return obj_bytes_len + obj_bytes
 
 
 def obj_from_bytes(data: bytes):
+    """Deserialize an object from bytes using Dill.
+
+    This function deserializes a byte stream into an object using Dill.
+
+    Args:
+        data (bytes): The byte data to be deserialized.
+
+    Returns:
+        object: The deserialized object.
+    """
     return dill.loads(data)
 
 
-def serialize(obj):
+def serialize(obj) -> bytes:
+    """Serialize an object to bytes with a length prefix.
+
+    This function serializes an object by calling its `to_bytes()` method
+    and prepends the length of the serialized byte data.
+
+    Args:
+        obj: The object to be serialized.
+
+    Returns:
+        bytes: The serialized byte representation of the object, or a placeholder
+               if the object is `None`.
+    """
     if obj is None:
         return b'\x00\x00\x00\x00'
     obj_bytes = obj.to_bytes()
@@ -57,7 +161,21 @@ def serialize(obj):
     return obj_bytes_len + obj_bytes
 
 
-def deserialize(data, cls, *args):
+def deserialize(data: bytes, cls, *args) -> Tuple[Optional[object], bytes]:
+    """Deserialize a byte stream into an object.
+
+    This function deserializes a byte stream into an object of the specified class
+    by calling the class's `from_bytes()` method. The length of the serialized data
+    is used to extract the object, and the remaining data is returned.
+
+    Args:
+        data (bytes): The byte stream to be deserialized.
+        cls (class): The class type that has a `from_bytes()` method for deserialization.
+        *args: Additional arguments passed to the class's `from_bytes()` method.
+
+    Returns:
+        tuple[Optional[object], bytes]: The deserialized object and the remaining byte stream.
+    """
     obj_len = int.from_bytes(data[:INT_LENGTH], 'big')
     if obj_len == 0:
         return None, data[INT_LENGTH:]
