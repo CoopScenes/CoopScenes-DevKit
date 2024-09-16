@@ -114,7 +114,7 @@ class VehicleInformation:
 
     Attributes:
         model_name (Optional[str]): The model name of the vehicle.
-        extrinsic (Optional[Pose]): The extrinsic pose of the vehicle in the reference coordinate system.
+        extrinsic (Optional[Pose]): The extrinsic pose of the TOP Lidar relative to the UPPER_PLATFORM Lidar.
     """
 
     def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
@@ -122,7 +122,7 @@ class VehicleInformation:
 
         Args:
             model_name (Optional[str]): The model name of the vehicle.
-            extrinsic (Optional[Pose]): The extrinsic pose of the vehicle in the reference coordinate system.
+            extrinsic (Optional[Pose]): The extrinsic pose of the TOP Lidar relative to the UPPER_PLATFORM Lidar.
         """
         self.model_name = model_name
         self.extrinsic = extrinsic
@@ -133,7 +133,7 @@ class TowerInformation:
 
     Attributes:
         model_name (Optional[str]): The model name of the tower.
-        extrinsic (Optional[Pose]): The extrinsic pose of the tower in the reference coordinate system.
+        extrinsic (Optional[Pose]): The extrinsic pose of the UPPER_PLATFORM Lidar relative to the TOP Lidar.
     """
 
     def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
@@ -141,7 +141,45 @@ class TowerInformation:
 
         Args:
             model_name (Optional[str]): The model name of the tower.
-            extrinsic (Optional[Pose]): The extrinsic pose of the tower in the reference coordinate system.
+            extrinsic (Optional[Pose]): The extrinsic pose of the UPPER_PLATFORM Lidar relative to the TOP Lidar.
+        """
+        self.model_name = model_name
+        self.extrinsic = extrinsic
+
+
+class IMUInformation:
+    """Class representing metadata about an IMU sensor.
+
+    Attributes:
+        model_name (Optional[str]): The model name of the IMU sensor.
+        extrinsic (Optional[Pose]): The extrinsic pose of the IMU sensor relative to the TOP Lidar for the vehicle.
+    """
+
+    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
+        """Initialize an IMUInformation object.
+
+        Args:
+            model_name (Optional[str]): The model name of the IMU sensor.
+            extrinsic (Optional[Pose]): The extrinsic pose of the IMU sensor relative to the TOP Lidar for the vehicle.
+        """
+        self.model_name = model_name
+        self.extrinsic = extrinsic
+
+
+class GNSSInformation:
+    """Class representing metadata about a GNSS sensor.
+
+    Attributes:
+        model_name (Optional[str]): The model name of the GNSS sensor.
+        extrinsic (Optional[Pose]): The extrinsic pose of the GNSS sensor relative to the TOP Lidar for the vehicle.
+    """
+
+    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
+        """Initialize a GNSSInformation object.
+
+        Args:
+            model_name (Optional[str]): The model name of the GNSS sensor.
+            extrinsic (Optional[Pose]): The extrinsic pose of the GNSS sensor relative to the TOP Lidar for the vehicle.
         """
         self.model_name = model_name
         self.extrinsic = extrinsic
@@ -166,44 +204,6 @@ class DynamicsInformation:
         self.heading_source = heading_source
 
 
-class IMUInformation:
-    """Class representing metadata about an IMU sensor.
-
-    Attributes:
-        model_name (Optional[str]): The model name of the IMU sensor.
-        extrinsic (Optional[Pose]): The extrinsic pose of the IMU sensor in the reference coordinate system.
-    """
-
-    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
-        """Initialize an IMUInformation object.
-
-        Args:
-            model_name (Optional[str]): The model name of the IMU sensor.
-            extrinsic (Optional[Pose]): The extrinsic pose of the IMU sensor in the reference coordinate system.
-        """
-        self.model_name = model_name
-        self.extrinsic = extrinsic
-
-
-class GNSSInformation:
-    """Class representing metadata about a GNSS sensor.
-
-    Attributes:
-        model_name (Optional[str]): The model name of the GNSS sensor.
-        extrinsic (Optional[Pose]): The extrinsic pose of the GNSS sensor in the reference coordinate system.
-    """
-
-    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
-        """Initialize a GNSSInformation object.
-
-        Args:
-            model_name (Optional[str]): The model name of the GNSS sensor.
-            extrinsic (Optional[Pose]): The extrinsic pose of the GNSS sensor in the reference coordinate system.
-        """
-        self.model_name = model_name
-        self.extrinsic = extrinsic
-
-
 class CameraInformation:
     """Class representing metadata about a camera sensor.
 
@@ -221,8 +221,8 @@ class CameraInformation:
         focal_length (Optional[int]): The focal length of the camera in mm.
         aperture (Optional[int]): The aperture size of the camera in mm.
         exposure_time (Optional[int]): The exposure time of the camera in microseconds.
-        extrinsic (Optional[Pose]): The extrinsic pose of the camera in the reference coordinate system.
-        stereo_transform (Optional[TransformationMtx]): The transformation matrix for stereo cameras.
+        extrinsic (Optional[Pose]): The extrinsic pose of the Camera sensor relative to the TOP Lidar for the vehicle or the UPPER_PLATFORM Lidar for the tower.
+        stereo_transform (Optional[TransformationMtx]): The transformation matrix from STEREO_LEFT camera to STEREO_RIGHT camera.
     """
 
     def __init__(self, name: str, model_name: Optional[str] = None, shape: Optional[Tuple[int, int]] = None,
@@ -248,8 +248,8 @@ class CameraInformation:
             focal_length (Optional[int]): The focal length of the camera.
             aperture (Optional[int]): The aperture size of the camera.
             exposure_time (Optional[int]): The exposure time of the camera.
-            extrinsic (Optional[Pose]): The extrinsic pose of the camera in the reference coordinate system.
-            stereo_transform (Optional[TransformationMtx]): The transformation matrix for stereo cameras.
+            extrinsic (Optional[Pose]): The extrinsic pose of the Camera sensor relative to the TOP Lidar for the vehicle or the UPPER_PLATFORM Lidar for the tower.
+            stereo_transform (Optional[TransformationMtx]): The transformation matrix from STEREO_LEFT camera to STEREO_RIGHT camera.
         """
         self.name = name
         self.model_name = model_name
@@ -296,14 +296,20 @@ class LidarInformation:
     Attributes:
         name (str): The name of the Lidar sensor.
         model_name (Optional[str]): The model name of the Lidar sensor.
-        extrinsic (Optional[Pose]): The extrinsic pose of the Lidar sensor.
+        extrinsic (Optional[Pose]): The extrinsic pose of the Lidar sensor relative to the TOP Lidar for the vehicle or the UPPER_PLATFORM Lidar for the tower.
         vertical_fov (Optional[float]): The vertical field of view of the Lidar (for Blickfeld sensors).
         horizontal_fov (Optional[float]): The horizontal field of view of the Lidar (for Blickfeld sensors).
         beam_altitude_angles (Optional[np.array]): Beam altitude angles (for Ouster sensors).
         beam_azimuth_angles (Optional[np.array]): Beam azimuth angles (for Ouster sensors).
-        lidar_origin_to_beam_origin_mm (Optional[np.array]): Distance from the Lidar origin to the beam origin in mm.
+        lidar_origin_to_beam_origin_mm (Optional[np.array]): Distance from the Lidar origin to the beam origin in mm (for Ouster sensors).
         horizontal_scanlines (Optional[int]): The number of horizontal scanlines (for Ouster sensors).
         vertical_scanlines (Optional[int]): The number of vertical scanlines (for Ouster sensors).
+        phase_lock_offset (Optional[int]): The phase lock offset (for Ouster sensors).
+        lidar_to_sensor_transform (Optional[np.array]): Transformation matrix from the Lidar frame to the sensor frame (for Ouster sensors).
+        horizontal_angle_spacing (Optional[float]): The horizontal angle spacing of the Lidar (for Blickfeld sensors).
+        frame_mode (Optional[str]): The frame mode of the Lidar (for Blickfeld sensors).
+        scan_pattern (Optional[str]): The scan pattern of the Lidar (for Blickfeld sensors).
+        dtype (np.dtype): Data type structure of the Lidar point cloud data.
     """
 
     def __init__(self, name: str, model_name: Optional[str] = None, beam_altitude_angles: Optional[np.array] = None,
@@ -321,15 +327,18 @@ class LidarInformation:
             model_name (Optional[str]): The model name of the Lidar sensor.
             beam_altitude_angles (Optional[np.array]): Beam altitude angles (for Ouster sensors).
             beam_azimuth_angles (Optional[np.array]): Beam azimuth angles (for Ouster sensors).
-            lidar_origin_to_beam_origin_mm (Optional[np.array]): Distance from the Lidar origin to the beam origin in mm.
+            lidar_origin_to_beam_origin_mm (Optional[np.array]): Distance from the Lidar origin to the beam origin in mm (for Ouster sensors).
             horizontal_scanlines (Optional[int]): The number of horizontal scanlines (for Ouster sensors).
             vertical_scanlines (Optional[int]): The number of vertical scanlines (for Ouster sensors).
-            extrinsic (Optional[Pose]): The extrinsic pose of the Lidar sensor.
+            phase_lock_offset (Optional[int]): The phase lock offset (for Ouster sensors).
+            lidar_to_sensor_transform (Optional[np.array]): Transformation matrix from the Lidar frame to the sensor frame (for Ouster sensors).
+            extrinsic (Optional[Pose]): The extrinsic pose of the Lidar sensor relative to the TOP Lidar for the vehicle or the UPPER_PLATFORM Lidar for the tower.
             vertical_fov (Optional[float]): The vertical field of view of the Lidar (for Blickfeld sensors).
             horizontal_fov (Optional[float]): The horizontal field of view of the Lidar (for Blickfeld sensors).
-            horizontal_angle_spacing (Optional[float]): The horizontal angle spacing (for Blickfeld sensors).
-            frame_mode (Optional[str]): The frame mode of the Lidar.
-            scan_pattern (Optional[str]): The scan pattern of the Lidar.
+            horizontal_angle_spacing (Optional[float]): The horizontal angle spacing of the Lidar (for Blickfeld sensors).
+            frame_mode (Optional[str]): The frame mode of the Lidar (for Blickfeld sensors).
+            scan_pattern (Optional[str]): The scan pattern of the Lidar (for Blickfeld sensors).
+            dtype (np.dtype): Data type structure of the Lidar point cloud data.
         """
         self.name = name
         self.model_name = model_name

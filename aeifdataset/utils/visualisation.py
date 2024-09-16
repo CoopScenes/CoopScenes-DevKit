@@ -15,9 +15,9 @@ Functions:
 """
 from typing import Optional
 from PIL import Image
+import importlib.util
 import numpy as np
 import matplotlib.pyplot as plt
-import open3d as o3d
 
 from aeifdataset.data import Lidar, Camera
 from aeifdataset.utils import get_projection_img, get_depth_map
@@ -81,6 +81,9 @@ def show_points(lidar: Lidar) -> None:
     Returns:
         None
     """
+    if importlib.util.find_spec("open3d") is None:
+        raise ImportError('Install open3d to use this function with: python -m pip install open3d')
+    import open3d as o3d
     points = lidar.points.points
 
     # Convert structured NumPy array to a regular 3D NumPy array with contiguous memory.

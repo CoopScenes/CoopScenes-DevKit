@@ -1,7 +1,6 @@
-from .core import *
-
-from . import data
-from . import utils
+from .core import Dataloader, DataRecord
+from data import *
+from utils import *
 
 import re
 import pathlib
