@@ -34,7 +34,7 @@ class Frame:
         version (float): Version of the frame format.
     """
 
-    def __init__(self, frame_id: int, timestamp: Decimal, version: float):
+    def __init__(self, frame_id: int, timestamp: Decimal, version: str):
         """Initialize the Frame object with the provided frame ID, timestamp, and version.
 
         Args:

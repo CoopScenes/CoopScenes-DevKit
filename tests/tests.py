@@ -1,3 +1,5 @@
+from tkinter.scrolledtext import example
+
 from aeifdataset import Dataloader, DataRecord
 from aeifdataset.utils import visualisation as vis
 from aeifdataset.utils import image_functions as imf
@@ -12,10 +14,16 @@ import os
 # id09700_2024-07-18_18-20-36.4mse
 
 
-dataloader = Dataloader("/media/slam/Extreme SSD/datasets/record_1/packed/")
-datarecord = dataloader[1]
-frame = datarecord[0]
-back_left = frame.vehicle.cameras.BACK_LEFT
+dataset = Dataloader("/mnt/dataset/record_1/packed")
+
+example_record_1 = dataset[0]
+example_record_1 = DataRecord("/mnt/dataset/record_1/packed/id00020_2024-07-18_18-04-28.4mse")
+
+frames = []
+for datarecord in dataset:
+    for frame in datarecord:
+        frames.append(frame)
+pass
 '''
 back_left = frame.vehicle.cameras.BACK_LEFT
 front_left = frame.vehicle.cameras.FRONT_LEFT

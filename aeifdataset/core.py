@@ -10,7 +10,7 @@ Classes:
     Dataloader: Manages the loading of AMEISE-Record files from a specified directory. Provides access to these
                 records and allows for retrieval by index or filename.
 """
-from typing import List, Optional
+from typing import List, Optional, Iterator
 import os
 import glob
 from aeifdataset.data import *
@@ -78,6 +78,18 @@ class DataRecord:
         end_pos = start_pos + self.frame_lengths[frame_index]
         return Frame.from_bytes(self.frames_data[start_pos:end_pos])
 
+    def __iter__(self) -> Iterator['Frame']:
+        """Return an iterator over frames in the DataRecord.
+
+        Yields:
+            Iterator[Frame]: An iterator that yields Frame objects.
+        """
+        start_pos = 0
+        for length in self.frame_lengths:
+            end_pos = start_pos + length
+            yield Frame.from_bytes(self.frames_data[start_pos:end_pos])
+            start_pos = end_pos
+
     @staticmethod
     def to_bytes(frames: List[Frame]) -> bytes:
         """Serialize a list of frames into bytes.
@@ -122,7 +134,7 @@ class Dataloader:
         """Return the number of records found in the directory."""
         return len(self.record_map)
 
-    def __getitem__(self, item) -> DataRecord:
+    def __getitem__(self, item) -> 'DataRecord':
         """Get a specific DataRecord by index.
 
         Args:
@@ -133,17 +145,11 @@ class Dataloader:
         """
         return DataRecord(record_file=self.record_map[item])
 
-    def get_record_by_name(self, filename: str) -> Optional[DataRecord]:
-        """Retrieve a DataRecord by its filename.
+    def __iter__(self) -> Iterator['DataRecord']:
+        """Return an iterator over DataRecord objects in the directory.
 
-        Args:
-            filename (str): The name of the record file to search for.
-
-        Returns:
-            Optional[DataRecord]: The DataRecord object if found, or None if not.
+        Yields:
+            Iterator[DataRecord]: An iterator that yields DataRecord objects.
         """
         for record_path in self.record_map:
-            if filename in record_path:
-                return DataRecord(record_file=record_path)
-        print(f"No record with name {filename} found.")
-        return None
+            yield DataRecord(record_file=record_path)
