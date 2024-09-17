@@ -2,13 +2,13 @@
 
 ### Frame
 
-| Attribute   | Data Type | Description                          |
-|-------------|-----------|--------------------------------------|
-| `frame_id`  | `int`     | Unique identifier for the frame.     |
-| `timestamp` | `Decimal` | Timestamp associated with the frame. |
-| `version`   | `float`   | Version of the frame format.         |
-| `vehicle`   | `Vehicle` | Vehicle sensor data.                 |
-| `tower`     | `Tower`   | Tower sensor data.                   |
+| Attribute   | Data Type | Description                                            |
+|-------------|-----------|--------------------------------------------------------|
+| `frame_id`  | `int`     | Unique identifier for the frame.                       |
+| `timestamp` | `Decimal` | Timestamp associated with the frame.                   |
+| `version`   | `str`     | Version of aeif-dataset package used for packing       |
+| `vehicle`   | `Vehicle` | Vehicle sensor data.                                   |
+| `tower`     | `Tower`   | Tower sensor data.                                     |
 
 -------------------------------------------------------------------
 
