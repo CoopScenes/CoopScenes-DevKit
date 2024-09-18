@@ -1,25 +1,71 @@
 """
-This module provides a set of utility functions for handling various tasks such as time conversion,
-data serialization, and checksum computation. It includes functions for converting Unix timestamps
-to UTC strings, serializing and deserializing objects, computing and reading checksums, and handling
-byte streams.
+This module provides utility functions and mixins for various tasks such as time conversion,
+data serialization, and checksum computation. The functions include time conversion from Unix
+timestamps to UTC strings, serialization and deserialization of objects, checksum calculation,
+and handling byte streams.
+
+Classes:
+    TimestampMixin: A mixin class providing a method for timestamp conversion.
+    ReprFormaterMixin: A mixin class providing methods for formatting numpy arrays and nested objects.
 
 Functions:
-    unix_to_utc: Convert a Unix timestamp to a formatted UTC time string.
-    compute_checksum: Compute the SHA-256 checksum for a given data block.
-    read_checksum: Read and separate the SHA-256 checksum from a data stream.
-    read_data_block: Read a block of data from a byte stream, using a length prefix.
-    obj_to_bytes: Serialize an object to bytes using the Dill library.
-    obj_from_bytes: Deserialize an object from bytes using the Dill library.
-    serialize: Serialize an object to bytes with a length prefix.
-    deserialize: Deserialize a byte stream into an object using the class's `from_bytes()` method.
+    unix_to_utc(unix_time, precision='ns', timezone_offset_hours=2): Converts a Unix timestamp to a formatted UTC time string.
+    compute_checksum(data): Computes the SHA-256 checksum for a given data block.
+    read_checksum(data): Reads and separates the SHA-256 checksum from a data stream.
+    read_data_block(data, dtype_length=INT_LENGTH): Reads a block of data from a byte stream, using a length prefix.
+    obj_to_bytes(obj): Serializes an object to bytes using the Dill library.
+    obj_from_bytes(data): Deserializes an object from bytes using the Dill library.
+    serialize(obj): Serializes an object to bytes with a length prefix.
+    deserialize(data, cls, *args): Deserializes a byte stream into an object using the class's `from_bytes()` method.
 """
 from typing import Optional, Tuple
 from aeifdataset.miscellaneous import INT_LENGTH, SHA256_CHECKSUM_LENGTH
 from decimal import Decimal
 from datetime import datetime, timedelta
+import numpy as np
 import hashlib
 import dill
+
+
+class TimestampMixin:
+    """Mixin class to provide a method for timestamp conversion."""
+
+    def get_timestamp(self, precision='ns', timezone_offset_hours=2) -> str:
+        """Convert the timestamp to a formatted string.
+
+        Args:
+            precision (str): Desired precision for the timestamp ('ns' or 's').
+            timezone_offset_hours (int): Timezone offset in hours.
+
+        Returns:
+            str: The formatted timestamp.
+        """
+        if not hasattr(self, 'timestamp') or self.timestamp is None:
+            return 'None'
+        return unix_to_utc(self.timestamp, precision=precision, timezone_offset_hours=timezone_offset_hours)
+
+
+class ReprFormaterMixin:
+    """Mixin class to provide a method for formatting numpy arrays."""
+
+    @staticmethod
+    def _format_array(array: Optional[np.array], precision: int = 3, indent: int = 0) -> str:
+        """Format a numpy array for display."""
+        if array is None:
+            return 'None'
+        string = np.array2string(array, precision=precision, separator=', ')
+        formated_string = string.replace('\n', '\n' + ' ' * indent)
+        return formated_string
+
+    @staticmethod
+    def _format_object(obj, linestart='\n', indent: int = 4) -> str:
+        """Format nested objects like Pose for display with indentation."""
+        if obj is None:
+            return 'None'
+        obj_repr = repr(obj)
+        # Indent each line after the first
+        indented_obj_repr = obj_repr.replace(linestart, linestart + ' ' * indent)
+        return indented_obj_repr
 
 
 def unix_to_utc(unix_time: Decimal, precision='ns', timezone_offset_hours=2) -> str:

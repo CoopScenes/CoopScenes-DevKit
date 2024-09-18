@@ -18,11 +18,11 @@ data types, as well as utility functions like converting timestamps to human-rea
 from typing import Tuple, Optional, Dict
 from decimal import Decimal
 from PIL import Image as PilImage
-from aeifdataset.miscellaneous import read_data_block, unix_to_utc
+from aeifdataset.miscellaneous import read_data_block, TimestampMixin, ReprFormaterMixin
 import numpy as np
 
 
-class Velocity:
+class Velocity(TimestampMixin, ReprFormaterMixin):
     """Class representing velocity data, including timestamp, linear and angular velocities, and covariance.
 
     Attributes:
@@ -49,8 +49,22 @@ class Velocity:
         self.angular_velocity = angular_velocity
         self.covariance = covariance
 
+    def __repr__(self):
+        """Return a string representation of the Velocity object with timestamp, linear, and angular velocities."""
+        return (
+            f"Velocity(\n"
+            f"    timestamp={self.get_timestamp()},\n"
+            f"    linear_velocity={self._format_array(self.linear_velocity)},\n"
+            f"    angular_velocity={self._format_array(self.angular_velocity)}\n"
+            f")"
+        )
 
-class Heading:
+    def __str__(self):
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
+
+
+class Heading(TimestampMixin, ReprFormaterMixin):
     """Class representing heading/orientation data with timestamp and covariance.
 
     Attributes:
@@ -72,8 +86,21 @@ class Heading:
         self.orientation = orientation
         self.covariance = covariance
 
+    def __repr__(self):
+        """Return a string representation of the Heading object with timestamp and orientation."""
+        return (
+            f"Heading(\n"
+            f"    timestamp={self.get_timestamp()},\n"
+            f"    orientation={self._format_array(self.orientation)}\n"
+            f")"
+        )
 
-class Motion:
+    def __str__(self):
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
+
+
+class Motion(TimestampMixin, ReprFormaterMixin):
     """Class representing motion data including orientation, velocity, and acceleration.
 
     Attributes:
@@ -109,8 +136,24 @@ class Motion:
         self.linear_acceleration = linear_acceleration
         self.linear_acceleration_covariance = linear_acceleration_covariance
 
+    def __repr__(self):
+        """Return a string representation of the Motion object with key attributes."""
 
-class Position:
+        return (
+            f"Motion(\n"
+            f"    timestamp={self.get_timestamp() if self.timestamp else 'None'},\n"
+            f"    orientation={self._format_array(self.orientation)},\n"
+            f"    angular_velocity={self._format_array(self.angular_velocity)},\n"
+            f"    linear_acceleration={self._format_array(self.linear_acceleration)}\n"
+            f")"
+        )
+
+    def __str__(self):
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
+
+
+class Position(TimestampMixin, ReprFormaterMixin):
     """Class representing position information including latitude, longitude, and altitude.
 
     Attributes:
@@ -149,6 +192,20 @@ class Position:
         self.covariance = covariance
         self.covariance_type = covariance_type
 
+    def __repr__(self):
+        """Return a string representation of the Position object with latitude, longitude, and timestamp."""
+        return (
+            f"Position(\n"
+            f"    timestamp={self.get_timestamp()},\n"
+            f"    latitude={self.latitude:.8f},\n"
+            f"    longitude={self.longitude:.8f}\n"
+            f")"
+        )
+
+    def __str__(self):
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
+
     @staticmethod
     def init_services(services: Optional[Dict[str, Optional[bool]]]) -> Dict[str, Optional[bool]]:
         """Initialize the services dictionary with default values for GPS, Glonass, Galileo, and Baidou.
@@ -167,7 +224,7 @@ class Position:
         return services
 
 
-class Image:
+class Image(TimestampMixin):
     """Class representing an image along with its metadata.
 
     Attributes:
@@ -184,6 +241,20 @@ class Image:
         """
         self.image = image
         self.timestamp = timestamp
+
+    def __getattr__(self, attr) -> PilImage:
+        """
+        Enables direct access to attributes of the `image` object.
+        Parameters:
+            attr (str): Name of the attribute to access.
+        Returns:
+            PilImage: Attribute value if it exists in the `image` object.
+        Raises:
+            AttributeError: If the attribute does not exist.
+        """
+        if hasattr(self.image, attr):
+            return getattr(self.image, attr)
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
 
     def to_bytes(self) -> bytes:
         """Serialize the image to bytes.
@@ -215,20 +286,8 @@ class Image:
         img_instance.image = PilImage.frombytes("RGB", shape, img_bytes)
         return img_instance
 
-    def get_timestamp(self, precision='ns', timezone_offset_hours=2) -> str:
-        """Convert the timestamp to a formatted string.
 
-        Args:
-            precision (str): Desired precision for the timestamp ('ns' or 's').
-            timezone_offset_hours (int): Timezone offset in hours.
-
-        Returns:
-            str: The formatted timestamp.
-        """
-        return unix_to_utc(self.timestamp, precision=precision, timezone_offset_hours=timezone_offset_hours)
-
-
-class Points:
+class Points(TimestampMixin):
     """Class representing a collection of points with an associated timestamp.
 
     Attributes:
@@ -245,6 +304,36 @@ class Points:
         """
         self.points = points
         self.timestamp = timestamp
+
+    def __getattr__(self, attr):
+        """
+        Enables direct access to attributes of the points object.
+
+        Parameters:
+            attr (str): Name of the attribute to access.
+
+        Returns:
+            np.array: Attribute value if it exists in the points object.
+
+        Raises:
+            AttributeError: If the attribute does not exist.
+        """
+        if hasattr(self.points, attr):
+            return getattr(self.points, attr)
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
+
+    def __getitem__(self, index: int) -> np.array:
+        """Enable subscriptable access to the points array.
+
+        Args:
+            index (int): Index to access the points array.
+
+        Returns:
+            np.array: The indexed points data.
+        """
+        if self.points is not None and self.points is not None:
+            return self.points[index]
+        raise IndexError(f"'{type(self).__name__}' object has no points data to index.")
 
     def to_bytes(self) -> bytes:
         """Serialize the points data to bytes.
@@ -275,15 +364,3 @@ class Points:
         pts_instance.timestamp = Decimal(ts_bytes.decode('utf-8'))
         pts_instance.points = np.frombuffer(pts_bytes, dtype=dtype)
         return pts_instance
-
-    def get_timestamp(self, precision='ns', timezone_offset_hours=2) -> str:
-        """Convert the timestamp to a formatted string.
-
-        Args:
-            precision (str): Desired precision for the timestamp ('ns' or 's').
-            timezone_offset_hours (int): Timezone offset in hours.
-
-        Returns:
-            str: The formatted timestamp.
-        """
-        return unix_to_utc(self.timestamp, precision=precision, timezone_offset_hours=timezone_offset_hours)

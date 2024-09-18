@@ -14,13 +14,13 @@ Functions:
     get_timestamp: Converts the frame's timestamp to a formatted UTC string with specified precision.
 """
 from decimal import Decimal
-from aeifdataset.miscellaneous import obj_to_bytes, obj_from_bytes, read_data_block, unix_to_utc, compute_checksum, \
-    ChecksumError
+from aeifdataset.miscellaneous import obj_to_bytes, obj_from_bytes, read_data_block, compute_checksum, \
+    ChecksumError, TimestampMixin, ReprFormaterMixin
 from aeifdataset.data import Tower, Vehicle, VisionSensorsVeh, VisionSensorsTow, LaserSensorsVeh, LaserSensorsTow
 from aeifdataset.miscellaneous.helper import read_checksum
 
 
-class Frame:
+class Frame(TimestampMixin, ReprFormaterMixin):
     """Class representing a frame of data containing vehicle and tower sensor information.
 
     This class handles the storage and serialization of a frame's metadata,
@@ -47,6 +47,20 @@ class Frame:
         self.vehicle: Vehicle = Vehicle()
         self.tower: Tower = Tower()
         self.version: float = version
+
+    def __repr__(self):
+        """Return a string representation of the Frame object with frame_id and timestamp."""
+        return (
+            f"Frame(\n"
+            f"    frame_id={self.frame_id},\n"
+            f"    timestamp={self.get_timestamp()},\n"
+            f"    version={self.version}\n"
+            f")"
+        )
+
+    def __str__(self):
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
 
     def to_bytes(self) -> bytes:
         """Serialize the Frame object, including metadata, vehicle, and tower data, to bytes.
@@ -120,15 +134,3 @@ class Frame:
                 elif attr_value is None:
                     unfilled_fields.append(attr_value)
         return True if not unfilled_fields else unfilled_fields
-
-    def get_timestamp(self, precision='s', timezone_offset_hours=2) -> str:
-        """Get the timestamp of the frame in UTC, formatted to the desired precision.
-
-        Args:
-            precision (str): Precision of the timestamp ('s' for seconds, 'ns' for nanoseconds). Defaults to 's'.
-            timezone_offset_hours (int): The timezone offset in hours for local time adjustment. Defaults to 2.
-
-        Returns:
-            str: The formatted timestamp string in UTC.
-        """
-        return unix_to_utc(self.timestamp, precision=precision, timezone_offset_hours=timezone_offset_hours)

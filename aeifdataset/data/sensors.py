@@ -62,7 +62,7 @@ class Camera:
     def __getattr__(self, attr):
         """Handle dynamic access to raw image attributes."""
         if self._image_raw is not None and hasattr(self._image_raw, attr):
-            return getattr(self._image_raw, attr)
+            return getattr(self.image, attr)
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
 
     def to_bytes(self) -> bytes:
@@ -112,11 +112,24 @@ class Lidar:
         self.info = info
         self.points = points
 
-    def __getattr__(self, attr) -> np.array:
+    def __getattr__(self, attr):
         """Handle dynamic access to point cloud attributes."""
-        if hasattr(self.points, attr):
+        if self.points is not None and hasattr(self.points, attr):
             return getattr(self.points, attr)
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
+
+    def __getitem__(self, index: int) -> np.array:
+        """Enable subscriptable access to the points array.
+
+        Args:
+            index (int): Index to access the points array.
+
+        Returns:
+            np.array: The indexed points data.
+        """
+        if self.points is not None and self.points.points is not None:
+            return self.points.points[index]
+        raise IndexError(f"'{type(self).__name__}' object has no points data to index.")
 
     def to_bytes(self) -> bytes:
         """Serialize the lidar data to bytes.
@@ -166,9 +179,13 @@ class IMU:
 
     def __getattr__(self, attr) -> np.array:
         """Handle dynamic access to motion attributes."""
-        if hasattr(self.ekf, attr):
-            return getattr(self.ekf, attr)
+        if hasattr(self.motion, attr):
+            return getattr(self.motion, attr)
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
+
+    def __getitem__(self, index: int) -> Motion:
+        """Enable subscriptable access to the motion list."""
+        return self.motion[index]
 
     def to_bytes(self) -> bytes:
         """Serialize the IMU data to bytes.
@@ -268,9 +285,13 @@ class GNSS:
 
     def __getattr__(self, attr) -> np.array:
         """Handle dynamic access to position attributes."""
-        if hasattr(self.ekf, attr):
-            return getattr(self.ekf, attr)
+        if hasattr(self.position, attr):
+            return getattr(self.position, attr)
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
+
+    def __getitem__(self, index: int) -> Position:
+        """Enable subscriptable access to the position list."""
+        return self.position[index]
 
     def to_bytes(self) -> bytes:
         """Serialize the GNSS data to bytes.

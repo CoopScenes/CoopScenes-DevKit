@@ -20,11 +20,14 @@ Each class in this module is designed to store and manage detailed metadata, whi
 sensor calibration, sensor fusion, and the overall understanding of sensor placement and characteristics
 in autonomous vehicle systems.
 """
-from typing import Tuple, Optional, Dict
+from typing import Tuple, Optional, Dict, List
 import numpy as np
+from numpy import dtype
+
+from aeifdataset.miscellaneous import ReprFormaterMixin
 
 
-class Pose:
+class Pose(ReprFormaterMixin):
     """Class representing the position and rotation of a sensor in 3D space.
 
     This class describes the position (xyz) and rotation (rpy) of a sensor
@@ -45,11 +48,21 @@ class Pose:
         self.xyz = xyz
         self.rpy = rpy
 
+    def __repr__(self):
+        """Return a string representation of the Pose object with xyz and rpy."""
+        return (
+            f"Pose(\n"
+            f"    xyz={self._format_array(self.xyz)},\n"
+            f"    rpy={self._format_array(self.rpy)}\n"
+            f")"
+        )
+
     def __str__(self):
-        return f"Pose(xyz={self.xyz}, rpy={self.rpy})"
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
 
 
-class TransformationMtx:
+class TransformationMtx(ReprFormaterMixin):
     """Class representing a transformation matrix with rotation and translation components.
 
     This class describes a transformation matrix that separates the rotation
@@ -70,8 +83,18 @@ class TransformationMtx:
         self.rotation = rotation
         self.translation = translation
 
+    def __repr__(self):
+        """Return a string representation of the TransformationMtx object with rotation and translation."""
+        return (
+            f"TransformationMtx(\n"
+            f"    rotation=\n{self._format_array(self.rotation)},\n"
+            f"    translation={self._format_array(self.translation)}\n"
+            f")"
+        )
+
     def __str__(self):
-        return f"TransformationMtx(rotation={self.rotation.tolist()}, translation={self.translation.tolist()})"
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
 
 
 class ROI:
@@ -105,11 +128,23 @@ class ROI:
     def __iter__(self):
         return iter((self.x_offset, self.y_offset, self.width, self.height))
 
+    def __repr__(self):
+        """Return a string representation of the ROI object with offsets and dimensions."""
+        return (
+            f"ROI(\n"
+            f"    x_offset={self.x_offset},\n"
+            f"    y_offset={self.y_offset},\n"
+            f"    width={self.width},\n"
+            f"    height={self.height}\n"
+            f")"
+        )
+
     def __str__(self):
-        return f"ROI(x_offset={self.x_offset}, y_offset={self.y_offset}, width={self.width}, height={self.height})"
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
 
 
-class VehicleInformation:
+class VehicleInformation(ReprFormaterMixin):
     """Class representing metadata about a vehicle.
 
     Attributes:
@@ -127,8 +162,21 @@ class VehicleInformation:
         self.model_name = model_name
         self.extrinsic = extrinsic
 
+    def __repr__(self):
+        """Return a string representation of the VehicleInformation object."""
+        return (
+            f"VehicleInformation(\n"
+            f"    model_name={self.model_name},\n"
+            f"    extrinsic={self._format_object(self.extrinsic)}\n"
+            f")"
+        )
 
-class TowerInformation:
+    def __str__(self):
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
+
+
+class TowerInformation(ReprFormaterMixin):
     """Class representing metadata about a sensor tower.
 
     Attributes:
@@ -146,8 +194,21 @@ class TowerInformation:
         self.model_name = model_name
         self.extrinsic = extrinsic
 
+    def __repr__(self):
+        """Return a string representation of the TowerInformation object."""
+        return (
+            f"TowerInformation(\n"
+            f"    model_name={self.model_name},\n"
+            f"    extrinsic={self._format_object(self.extrinsic)}\n"
+            f")"
+        )
 
-class IMUInformation:
+    def __str__(self):
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
+
+
+class IMUInformation(ReprFormaterMixin):
     """Class representing metadata about an IMU sensor.
 
     Attributes:
@@ -165,8 +226,21 @@ class IMUInformation:
         self.model_name = model_name
         self.extrinsic = extrinsic
 
+    def __repr__(self):
+        """Return a string representation of the IMUInformation object."""
+        return (
+            f"IMUInformation(\n"
+            f"    model_name={self.model_name},\n"
+            f"    extrinsic={self._format_object(self.extrinsic)}\n"
+            f")"
+        )
 
-class GNSSInformation:
+    def __str__(self):
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
+
+
+class GNSSInformation(ReprFormaterMixin):
     """Class representing metadata about a GNSS sensor.
 
     Attributes:
@@ -183,6 +257,19 @@ class GNSSInformation:
         """
         self.model_name = model_name
         self.extrinsic = extrinsic
+
+    def __repr__(self):
+        """Return a string representation of the GNSSInformation object."""
+        return (
+            f"GNSSInformation(\n"
+            f"    model_name={self.model_name},\n"
+            f"    extrinsic={self._format_object(self.extrinsic)}\n"
+            f")"
+        )
+
+    def __str__(self):
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
 
 
 class DynamicsInformation:
@@ -203,8 +290,21 @@ class DynamicsInformation:
         self.velocity_source = velocity_source
         self.heading_source = heading_source
 
+    def __repr__(self):
+        """Return a string representation of the DynamicsInformation object."""
+        return (
+            f"DynamicsInformation(\n"
+            f"    velocity_source={self.velocity_source},\n"
+            f"    heading_source={self.heading_source}\n"
+            f")"
+        )
 
-class CameraInformation:
+    def __str__(self):
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
+
+
+class CameraInformation(ReprFormaterMixin):
     """Class representing metadata about a camera sensor.
 
     Attributes:
@@ -267,6 +367,22 @@ class CameraInformation:
         self.extrinsic = extrinsic
         self.stereo_transform = stereo_transform
 
+    def __repr__(self):
+        """Return a string representation of the CameraInformation object with key attributes."""
+        return (
+            f"CameraInformation(\n"
+            f"    name={self.name},\n"
+            f"    model_name={self.model_name or 'N/A'},\n"
+            f"    camera_mtx=\n    {self._format_array(self.camera_mtx, indent=4)},\n"
+            f"    distortion_mtx=\n    {self._format_array(self.distortion_mtx, indent=4)},\n"
+            f"    extrinsic={self._format_object(self.extrinsic)}\n"
+            f")"
+        )
+
+    def __str__(self):
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
+
     def to_dict(self) -> Dict[str, str]:
         """Convert the CameraInformation object into a dictionary.
 
@@ -290,7 +406,7 @@ class CameraInformation:
         return info_dict
 
 
-class LidarInformation:
+class LidarInformation(ReprFormaterMixin):
     """Class representing metadata about a Lidar sensor.
 
     Attributes:
@@ -352,6 +468,21 @@ class LidarInformation:
                                     horizontal_scanlines, vertical_scanlines, phase_lock_offset,
                                     lidar_to_sensor_transform)
 
+    def __repr__(self):
+        """Return a string representation of the LidarInformation object with key attributes."""
+        return (
+            f"LidarInformation(\n"
+            f"    name={self.name},\n"
+            f"    model_name={self.model_name or 'N/A'},\n"
+            f"    extrinsic={self._format_object(self.extrinsic)},\n"
+            f"    dtype=[{', '.join(self.dtype.names)}]\n"
+            f")"
+        )
+
+    def __str__(self):
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
+
     def _initialize_blickfeld(self, vertical_fov: Optional[float], horizontal_fov: Optional[float],
                               horizontal_angle_spacing: Optional[float], frame_mode: Optional[str],
                               scan_pattern: Optional[str]):
@@ -378,7 +509,7 @@ class LidarInformation:
         self.dtype = np.dtype(self._os_dtype_structure())
 
     @staticmethod
-    def _os_dtype_structure() -> dict:
+    def _os_dtype_structure() -> Dict[str, List]:
         """Return the dtype structure for 'OS' (Ouster) Lidar models."""
         return {
             'names': [
@@ -394,7 +525,7 @@ class LidarInformation:
         }
 
     @staticmethod
-    def _blickfeld_dtype_structure() -> dict:
+    def _blickfeld_dtype_structure() -> Dict[str, List]:
         """Return the dtype structure for 'Blickfeld' Lidar models."""
         return {
             'names': ['x', 'y', 'z', 'range', 'intensity', 'point_id', 'point_time_offset'],

@@ -1,5 +1,6 @@
-from tkinter.scrolledtext import example
-
+from decimal import Decimal
+from typing import Optional
+import numpy as np
 from aeifdataset import Dataloader, DataRecord
 from aeifdataset.utils import visualisation as vis
 from aeifdataset.utils import image_functions as imf
@@ -14,15 +15,12 @@ import os
 # id09700_2024-07-18_18-20-36.4mse
 
 
-dataset = Dataloader("/mnt/dataset/record_1/packed")
-
-example_record_1 = dataset[0]
 example_record_1 = DataRecord("/mnt/dataset/record_1/packed/id00020_2024-07-18_18-04-28.4mse")
+frame = example_record_1[1]
+test = frame.vehicle.lidars.TOP.info
+print(test)
 
-frames = []
-for datarecord in dataset:
-    for frame in datarecord:
-        frames.append(frame)
+print('stop')
 pass
 '''
 back_left = frame.vehicle.cameras.BACK_LEFT
