@@ -48,6 +48,17 @@ class VisionSensorsVeh:
         self.BACK_RIGHT: Optional[Camera] = None
         self.REAR: Optional[Camera] = None
 
+    def __iter__(self):
+        """Make the object iteratable over its cameras."""
+        for name in self._CAMERA_NAMES:
+            camera = getattr(self, name)
+            if camera is not None:
+                yield name, camera
+
+    def __len__(self):
+        """Return the number of non-None cameras."""
+        return sum(1 for name in self._CAMERA_NAMES if getattr(self, name) is not None)
+
     def to_bytes(self) -> bytes:
         """Serialize all vision sensors to bytes.
 
@@ -100,6 +111,17 @@ class LaserSensorsVeh:
         self.RIGHT: Optional[Lidar] = None
         self.REAR: Optional[Lidar] = None
 
+    def __iter__(self):
+        """Make the object iteratable over its LiDAR sensors."""
+        for name in self._LIDAR_NAMES:
+            lidar = getattr(self, name)
+            if lidar is not None:
+                yield name, lidar
+
+    def __len__(self):
+        """Return the number of non-None lidars."""
+        return sum(1 for name in self._LIDAR_NAMES if getattr(self, name) is not None)
+
     def to_bytes(self) -> bytes:
         """Serialize all laser sensors to bytes.
 
@@ -147,6 +169,17 @@ class VisionSensorsTow:
         """Initialize the VisionSensorsTow object with all cameras set to None."""
         self.VIEW_1: Optional[Camera] = None
         self.VIEW_2: Optional[Camera] = None
+
+    def __iter__(self):
+        """Make the object iteratable over its cameras."""
+        for name in self._CAMERA_NAMES:
+            camera = getattr(self, name)
+            if camera is not None:
+                yield name, camera
+
+    def __len__(self):
+        """Return the number of non-None cameras."""
+        return sum(1 for name in self._CAMERA_NAMES if getattr(self, name) is not None)
 
     def to_bytes(self) -> bytes:
         """Serialize all vision sensors to bytes.
@@ -197,6 +230,17 @@ class LaserSensorsTow:
         self.VIEW_1: Optional[Lidar] = None
         self.VIEW_2: Optional[Lidar] = None
         self.UPPER_PLATFORM: Optional[Lidar] = None
+
+    def __iter__(self):
+        """Make the object iteratable over its LiDAR sensors."""
+        for name in self._LIDAR_NAMES:
+            lidar = getattr(self, name)
+            if lidar is not None:
+                yield name, lidar
+
+    def __len__(self):
+        """Return the number of non-None lidars."""
+        return sum(1 for name in self._LIDAR_NAMES if getattr(self, name) is not None)
 
     def to_bytes(self) -> bytes:
         """Serialize all laser sensors to bytes.

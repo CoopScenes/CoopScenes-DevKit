@@ -62,6 +62,11 @@ class Frame(TimestampMixin, ReprFormaterMixin):
         """Return the same representation as __repr__ for user-friendly output."""
         return self.__repr__()
 
+    def __iter__(self):
+        """Make the object iterable over its agents."""
+        yield self.vehicle
+        yield self.tower
+
     def to_bytes(self) -> bytes:
         """Serialize the Frame object, including metadata, vehicle, and tower data, to bytes.
 

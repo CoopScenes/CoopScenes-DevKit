@@ -13,7 +13,7 @@ Functions:
     show_tf_correction(camera, lidar, roll_correction, pitch_correction, yaw_correction, intensity, static_color, max_range_factor):
         Display the effect of correcting the extrinsic parameters on Lidar projection.
 """
-from typing import Optional
+from typing import Optional, Union, Tuple
 from PIL import Image
 import importlib.util
 import numpy as np
@@ -84,7 +84,7 @@ def show_points(lidar: Lidar) -> None:
     if importlib.util.find_spec("open3d") is None:
         raise ImportError('Install open3d to use this function with: python -m pip install open3d')
     import open3d as o3d
-    points = lidar.points.points
+    points = lidar
 
     # Convert structured NumPy array to a regular 3D NumPy array with contiguous memory.
     xyz_points = np.stack((points['x'], points['y'], points['z']), axis=-1)
@@ -103,58 +103,31 @@ def show_points(lidar: Lidar) -> None:
     o3d.visualization.draw_geometries([pcd])
 
 
-def show_projection(camera: Camera, lidar: Lidar, lidar2: Optional[Lidar] = None, lidar3: Optional[Lidar] = None,
-                    static_color=None, static_color2=None, static_color3=None, max_range_factor: float = 0.5,
-                    intensity: bool = False) -> None:
-    """Project and visualize Lidar points onto a camera image.
-
-    This function projects points from up to three Lidar sensors onto a camera image,
-    optionally highlighting points by intensity or using static colors.
-
-    Args:
-        camera (Camera): The camera onto which the Lidar points are projected.
-        lidar (Lidar): The primary Lidar sensor.
-        lidar2 (Optional[Lidar]): An optional second Lidar sensor. Defaults to None.
-        lidar3 (Optional[Lidar]): An optional third Lidar sensor. Defaults to None.
-        static_color: Static color for the points from the primary Lidar. Defaults to None.
-        static_color2: Static color for the points from the second Lidar. Defaults to None.
-        static_color3: Static color for the points from the third Lidar. Defaults to None.
-        max_range_factor (float): Factor to scale the max range for normalization. Defaults to 0.5.
-        intensity (bool): If True, use intensity values for coloring. Defaults to False.
-
-    Returns:
-        None
-    """
-    camera.image.image = get_projection_img(camera, lidar, intensity, static_color, max_range_factor)
-    if lidar2 is not None:
-        camera.image.image = get_projection_img(camera, lidar2, intensity, static_color2, max_range_factor, False)
-    if lidar3 is not None:
-        camera.image.image = get_projection_img(camera, lidar3, intensity, static_color3, max_range_factor, False)
-    camera.image.image.show()
-
-
 def show_tf_correction(camera: Camera, lidar: Lidar, roll_correction: float, pitch_correction: float,
-                       yaw_correction: float,
-                       intensity: bool = False, static_color=None, max_range_factor: float = 0.5) -> None:
+                       yaw_correction: float, static_color: Optional[Union[str, Tuple[int, int, int]]] = None,
+                       max_range_factor: float = 0.5) -> None:
     """Display the effect of correcting the extrinsic parameters on Lidar projection.
 
     This function visualizes the projection of Lidar points onto a camera image before and after
-    applying a correction to the extrinsic parameters of the camera.
+    applying a correction to the extrinsic parameters of the camera. The user can specify corrections
+    to the roll, pitch, and yaw angles to adjust the extrinsic parameters. The comparison of the
+    raw and corrected projections is displayed side-by-side.
 
     Args:
-        camera (Camera): The camera with extrinsic parameters to correct.
-        lidar (Lidar): The Lidar sensor providing the points to project.
+        camera (Camera): The camera whose extrinsic parameters will be adjusted.
+        lidar (Lidar): The Lidar sensor providing the points to project onto the camera image.
         roll_correction (float): Correction to apply to the roll angle (in radians).
         pitch_correction (float): Correction to apply to the pitch angle (in radians).
         yaw_correction (float): Correction to apply to the yaw angle (in radians).
-        intensity (bool): If True, use intensity values for coloring. Defaults to False.
-        static_color: Static color for the points. Defaults to None.
-        max_range_factor (float): Factor to scale the max range for normalization. Defaults to 0.5.
+        static_color (Optional[Union[str, Tuple[int, int, int]]]): A string representing a color name
+            (e.g., "red") or an RGB tuple for the Lidar points. If provided, this color will be used for
+            the points instead of color mapping. Defaults to None.
+        max_range_factor (float): Factor to scale the max range of values for color normalization. Defaults to 0.5.
 
     Returns:
         None
     """
-    proj_img = get_projection_img(camera, lidar, intensity, static_color, max_range_factor)
+    proj_img = get_projection_img(camera, lidar, static_color=static_color, max_range_factor=max_range_factor)
 
     # Adjust extrinsic parameters
     x, y, z = camera.info.extrinsic.xyz
@@ -163,7 +136,7 @@ def show_tf_correction(camera: Camera, lidar: Lidar, roll_correction: float, pit
     camera.info.extrinsic.rpy = np.array([roll + roll_correction, pitch + pitch_correction, yaw + yaw_correction])
 
     # Display corrected projection
-    proj_img_corrected = get_projection_img(camera, lidar, intensity, static_color, max_range_factor)
+    proj_img_corrected = get_projection_img(camera, lidar, static_color=static_color, max_range_factor=max_range_factor)
 
     fig, axes = plt.subplots(1, 2, figsize=(40, 26))
 
@@ -174,7 +147,7 @@ def show_tf_correction(camera: Camera, lidar: Lidar, roll_correction: float, pit
 
     # Display the second image
     axes[1].imshow(proj_img_corrected)
-    axes[1].set_title(f'Corrected [Roll:{roll_correction}, Pitch:{pitch_correction}, Yaw:{yaw_correction}]')
+    axes[1].set_title(f'Corrected [Roll: {roll_correction}, Pitch: {pitch_correction}, Yaw: {yaw_correction}]')
     axes[1].axis('off')  # Hide axes
 
     print(camera.info.extrinsic)

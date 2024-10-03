@@ -118,43 +118,49 @@ def save_image(image: Image, output_path: str, suffix: str = '', metadata: Optio
     image.save(output_file, 'PNG', pnginfo=info, compress_level=0)
 
 
-def save_all_camera_images(frame, output_path: str):
+def save_all_camera_images(frame, output_path: str, create_subdir: bool = False):
     """Save all images from a frame's vehicle and tower cameras.
 
-    This function iterates through all cameras in the vehicle and tower of the frame and saves
-    each image to the specified output path.
+    This function iterates through all cameras in the vehicle and tower of the frame.
+    If create_subdir is True, a subdirectory for each camera will be created and images will be saved there.
+    Otherwise, all images will be saved directly in the output_path.
 
     Args:
         frame: The frame object containing vehicle and tower cameras.
         output_path (str): The directory where images will be saved.
+        create_subdir (bool): If True, creates a subdirectory for each camera.
     """
-    # Iterate through all attributes in the 'vehicle.cameras' and 'tower.cameras' objects
-    for camera_attr in dir(frame.vehicle.cameras):
-        camera = getattr(frame.vehicle.cameras, camera_attr, None)
+
+    def create_and_save_image(camera, camera_attr, base_output_path, create_subdir):
+        """Helper function to create a subdirectory and save the image."""
         if camera and hasattr(camera, '_image_raw'):
             try:
                 image = camera._image_raw
                 metadata = camera.info
-                suffix = f'_{camera_attr.lower()}'
-                save_image(image, output_path, suffix, metadata)
+                if create_subdir:
+                    camera_dir = os.path.join(base_output_path, camera_attr.lower())
+                    # Create the directory if it doesn't exist
+                    os.makedirs(camera_dir, exist_ok=True)
+                    save_path = camera_dir
+                else:
+                    save_path = base_output_path
+
+                # Save the image in the respective directory or base directory
+                save_image(image, save_path, '', metadata)
             except AttributeError as e:
                 print(f"Error processing {camera_attr}: {e}")
             except Exception as e:
                 print(f"Unexpected error processing {camera_attr}: {e}")
 
-    # Do the same for 'tower.cameras' if necessary
+    # Iterate through all attributes in the 'vehicle.cameras' object
+    for camera_attr in dir(frame.vehicle.cameras):
+        camera = getattr(frame.vehicle.cameras, camera_attr, None)
+        create_and_save_image(camera, camera_attr, output_path, create_subdir)
+
+    # Iterate through all attributes in the 'tower.cameras' object
     for camera_attr in dir(frame.tower.cameras):
         camera = getattr(frame.tower.cameras, camera_attr, None)
-        if camera and hasattr(camera, '_image_raw'):
-            try:
-                image = camera._image_raw
-                metadata = camera.info
-                suffix = f'_{camera_attr.lower()}'
-                save_image(image, output_path, suffix, metadata)
-            except AttributeError as e:
-                print(f"Error processing {camera_attr}: {e}")
-            except Exception as e:
-                print(f"Unexpected error processing {camera_attr}: {e}")
+        create_and_save_image(camera, camera_attr, output_path, create_subdir)
 
 
 def load_image_with_metadata(file_path: str) -> Tuple[PilImage.Image, dict]:

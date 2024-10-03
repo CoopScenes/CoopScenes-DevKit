@@ -2,8 +2,7 @@ from decimal import Decimal
 from typing import Optional
 import numpy as np
 from aeifdataset import Dataloader, DataRecord
-from aeifdataset.utils import visualisation as vis
-from aeifdataset.utils import image_functions as imf
+import aeifdataset as ad
 import os
 
 # id04390_2024-07-18_18-11-45.4mse
@@ -14,14 +13,19 @@ import os
 
 # id09700_2024-07-18_18-20-36.4mse
 
+example_record_1 = DataRecord("/mnt/dataset/dataset/seq_1_maille/packed/id00501_2024-09-27_10-32-20.4mse")
 
-example_record_1 = DataRecord("/mnt/dataset/record_1/packed/id00020_2024-07-18_18-04-28.4mse")
-frame = example_record_1[1]
-test = frame.vehicle.lidars.TOP.info
-print(test)
+frame = example_record_1[0]
 
-print('stop')
-pass
+stereo_left = frame.vehicle.cameras.STEREO_LEFT
+left_lidar = frame.vehicle.lidars.LEFT
+right_lidar = frame.vehicle.lidars.RIGHT
+top_lidar = frame.vehicle.lidars.TOP
+
+proj_img = ad.get_projection_img(camera=stereo_left, lidar=left_lidar, lidar2=right_lidar, lidar3=top_lidar,
+                                 static_color='yellow',
+                                 static_color2='red', static_color3='blue')
+proj_img.show()
 '''
 back_left = frame.vehicle.cameras.BACK_LEFT
 front_left = frame.vehicle.cameras.FRONT_LEFT
