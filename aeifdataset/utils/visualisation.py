@@ -1,19 +1,19 @@
 """
-This module provides functions for visualizing sensor data, including disparity maps from stereo camera images,
-3D point clouds from LiDAR sensors, and projections of LiDAR points onto camera images. It also includes
-utilities for displaying the effects of correcting the extrinsic parameters of the camera.
+This module provides functions for visualizing sensor data from autonomous vehicles, including disparity maps from stereo camera images,
+3D point clouds from LiDAR sensors, and projections of LiDAR points onto camera images. It also includes utilities for displaying
+the effects of correcting the extrinsic parameters of the camera, allowing users to visualize before-and-after corrections for roll, pitch, and yaw.
 
 Functions:
-    get_disparity_map(camera_left, camera_right, cmap_name, max_value):
-        Compute and return the disparity map between two stereo camera images.
+    get_colored_stereo_image(camera_left, camera_right, cmap_name, min_value, max_value):
+        Compute and return the depth map between two stereo camera images as a color-mapped image.
     plot_points_on_image(image, points, points_3d, cmap_name, radius, static_color, max_range_factor):
-        Plot 2D points on a camera image with optional color mapping.
+        Plot 2D points on a camera image with optional color mapping based on range values.
     get_projection_img(camera, lidars, max_range_factor):
-        Generate an image with LiDAR points projected onto it.
+        Generate an image with LiDAR points projected onto the camera image.
     show_points(lidar):
-        Display the point cloud from a LiDAR sensor.
+        Display the 3D point cloud from a LiDAR sensor using Open3D.
     show_tf_correction(camera, lidar_with_color, roll_correction, pitch_correction, yaw_correction, max_range_factor):
-        Display the effect of correcting the extrinsic parameters on LiDAR projection.
+        Display the effect of correcting the extrinsic parameters on the projection of LiDAR points onto a camera image, showing both raw and corrected projections side-by-side.
 """
 from typing import Optional, Union, Tuple, List
 from PIL import Image as PilImage, ImageDraw, ImageColor
@@ -25,36 +25,35 @@ from aeifdataset.data import Lidar, Camera
 from aeifdataset.utils import get_depth_map, get_projection
 
 
-def get_disparity_map(camera_left: Camera, camera_right: Camera, cmap_name: str = "viridis",
-                      max_value: int = 40) -> PilImage:
-    """Compute and return the disparity map between two stereo camera images.
+def get_colored_stereo_image(camera_left: Camera, camera_right: Camera, cmap_name: str = "viridis",
+                             min_value: int = 0, max_value: int = 40) -> PilImage:
+    """Compute and return the depth map between two stereo camera images as a color-mapped image.
 
-    This function computes the disparity map from a pair of rectified stereo images.
-    The resulting disparity map is color-mapped and returned as a PIL image.
+    This function computes the depth map from a pair of rectified stereo images.
+    The resulting depth map is color-mapped and returned as a PIL image.
 
     Args:
         camera_left (Camera): The left camera of the stereo pair.
         camera_right (Camera): The right camera of the stereo pair.
         cmap_name (str): The name of the colormap to use for visualization. Defaults to "viridis".
-        max_value (int): The maximum value for normalization. Defaults to 40.
+        min_value (int): The minimum depth value to be considered in the map. Values below this threshold will be masked (set to black). Defaults to 0.
+        max_value (int): The maximum value for normalization. Depth values will be normalized between this and the `min_value`. Defaults to 40.
 
     Returns:
-        PilImage: The generated disparity map with the specified colormap applied.
+        PilImage: The generated depth map with the specified colormap applied.
     """
     cmap = plt.get_cmap(cmap_name)
-    disparity_map = get_depth_map(camera_left, camera_right)
+    depth_map = get_depth_map(camera_left, camera_right)
 
-    val_min = np.min(disparity_map)
-    val_max = max_value
-    mask = disparity_map > 10 * val_max
-    norm_values = (disparity_map - val_min) / (val_max - val_min)
+    mask = depth_map > min_value
+    norm_values = (depth_map - min_value) / (max_value - min_value)
     norm_values = np.clip(norm_values, 0, 1)
 
     colored_map = cmap(norm_values)
     colored_map[mask] = [0, 0, 0, 1]  # Set masked values to black
     colored_map = (colored_map[:, :, :3] * 255).astype(np.uint8)
 
-    img = PilImage.fromarray(colored_map)
+    img = PilImage.fromarray(colored_map).convert('RGB')
     return img
 
 

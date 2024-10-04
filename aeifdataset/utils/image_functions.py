@@ -48,48 +48,76 @@ def get_rect_img(camera: Camera, performance_mode: bool = False) -> Image:
     return Image(PilImage.fromarray(rectified_image), camera._image_raw.timestamp)
 
 
-def get_depth_map(camera_left: Camera, camera_right: Camera) -> np.ndarray:
+def get_depth_map(camera_left: Camera, camera_right: Camera,
+                  stereo_param: Optional[cv2.StereoSGBM] = None) -> np.ndarray:
     """Compute a depth map from a pair of stereo images.
 
-    Uses stereo block matching to compute a disparity map, then calculates the depth map using the disparity values,
-    focal length, and baseline distance between the two cameras.
+    This function computes a depth map by first calculating a disparity map using stereo block matching.
+    It then converts the disparity map to a depth map based on the camera parameters.
 
     Args:
         camera_left (Camera): The left camera of the stereo pair.
         camera_right (Camera): The right camera of the stereo pair.
+        stereo_param (Optional[cv2.StereoSGBM]): Custom StereoSGBM parameters for disparity calculation.
+                                                If not provided, default parameters will be used.
 
     Returns:
         np.ndarray: The computed depth map.
     """
-    rect_left = get_rect_img(camera_left)
-    rect_right = get_rect_img(camera_right)
+    # Convert rectified images to grayscale
+    img1_gray = np.array(camera_left.image.convert('L'))
+    img2_gray = np.array(camera_right.image.convert('L'))
 
-    img1 = np.array(rect_left.image.convert('L'))  # Convert to grayscale
-    img2 = np.array(rect_right.image.convert('L'))  # Convert to grayscale
+    # Disparity computation
+    stereo = stereo_param or _create_default_stereo_sgbm()
+    disparity_map = stereo.compute(img1_gray, img2_gray).astype(np.float32)
+
+    # Handle zero disparities (to avoid division by zero in depth calculation)
+    disparity_map[disparity_map == 0] = 0.000001
+
+    # Depth computation
+    depth_map = _disparity_to_depth(disparity_map, camera_right)
+
+    return depth_map
+
+
+def _create_default_stereo_sgbm() -> cv2.StereoSGBM:
+    """Create default StereoSGBM parameters for disparity computation."""
+    window_size = 5
+    min_disparity = 0
+    num_disparities = 128  # Must be divisible by 16
+    block_size = window_size
 
     stereo = cv2.StereoSGBM_create(
-        minDisparity=0,
-        numDisparities=128,
-        blockSize=5,
-        P1=8 * 3 * 5 ** 2,
-        P2=32 * 3 * 5 ** 2,
+        minDisparity=min_disparity,
+        numDisparities=num_disparities,
+        blockSize=block_size,
+        P1=8 * 3 * block_size ** 2,  # P1 and P2 control the smoothness
+        P2=32 * 3 * block_size ** 2,
         disp12MaxDiff=1,
         uniquenessRatio=15,
         speckleWindowSize=100,
         speckleRange=32,
         mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY
     )
+    return stereo
 
-    disparity = stereo.compute(img1, img2)
 
-    disparity = cv2.normalize(disparity, disparity, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+def _disparity_to_depth(disparity_map: np.ndarray, camera: Camera) -> np.ndarray:
+    """Convert a disparity map to a depth map using camera parameters.
 
-    safe_disparity = np.where(disparity == 0, 0.000001, disparity)
+    Args:
+        disparity_map (np.ndarray): The disparity map to convert to depth.
+        camera (Camera): The right camera containing the focal length and baseline.
 
-    f = camera_right.info.focal_length
-    b = abs(camera_right.info.stereo_transform.translation[0]) * 10 ** 3
+    Returns:
+        np.ndarray: The computed depth map.
+    """
+    focal_length = camera.info.focal_length
+    baseline = abs(camera.info.stereo_transform.translation[0]) * 1000  # Convert to mm
 
-    depth_map = f * b / safe_disparity
+    # Depth calculation: depth = focal_length * baseline / disparity
+    depth_map = (focal_length * baseline) / disparity_map
 
     return depth_map
 

@@ -18,13 +18,10 @@ example_record_1 = DataRecord("/mnt/dataset/dataset/seq_1_maille/packed/id00501_
 frame = example_record_1[0]
 
 stereo_left = frame.vehicle.cameras.STEREO_LEFT
-left_lidar = frame.vehicle.lidars.LEFT
-right_lidar = frame.vehicle.lidars.RIGHT
-top_lidar = frame.vehicle.lidars.TOP
+stereo_right = frame.vehicle.cameras.STEREO_RIGHT
 
-proj_img = ad.get_projection_img(camera=stereo_left,
-                                 lidars=[(left_lidar, 'yellow'), (right_lidar, 'red'), (top_lidar, 'blue')])
-proj_img.show()
+stereo_image = ad.get_colored_stereo_image(stereo_left, stereo_right)
+stereo_image.show()
 '''
 back_left = frame.vehicle.cameras.BACK_LEFT
 front_left = frame.vehicle.cameras.FRONT_LEFT
