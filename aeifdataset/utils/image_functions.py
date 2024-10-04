@@ -1,13 +1,13 @@
 """
 This module provides functions for processing and handling images related to camera sensors.
-It includes functionalities for image rectification, depth map computation, saving images
-with metadata, and loading images with embedded metadata.
+It includes functionalities for image rectification, depth map computation, saving images with metadata,
+loading images with embedded metadata, and saving all images from a frame.
 
 Functions:
-    get_rect_img(camera): Rectify the provided image using the camera's intrinsic and extrinsic parameters.
+    get_rect_img(camera, performance_mode=False): Rectify the provided image using the camera's intrinsic and extrinsic parameters.
     get_depth_map(camera_left, camera_right): Compute a depth map from a pair of stereo images.
-    save_image(image, output_path, suffix, metadata): Save an image to disk with optional metadata.
-    save_all_camera_images(frame, output_path): Save all images from a frame's vehicle and tower cameras.
+    save_image(image, output_path, suffix='', metadata=None): Save an image to disk with optional metadata.
+    save_all_images_in_frame(frame, output_path, create_subdir=False): Save all images from a frame's vehicle and tower cameras.
     load_image_with_metadata(file_path): Load an image along with its embedded metadata.
 """
 from typing import Optional, Tuple
@@ -19,27 +19,31 @@ import numpy as np
 import cv2
 
 
-def get_rect_img(camera: Camera) -> Image:
+def get_rect_img(camera: Camera, performance_mode: bool = False) -> Image:
     """Rectify the provided image using the camera's intrinsic and extrinsic parameters.
 
-    This function performs image rectification using the camera matrix, distortion coefficients,
-    rectification matrix, and projection matrix. The rectified image is returned as an `Image` object.
+    Performs image rectification using the camera matrix, distortion coefficients, rectification matrix,
+    and projection matrix. The rectified image is returned as an `Image` object.
 
     Args:
         camera (Camera): The camera object containing the image and calibration parameters.
+        performance_mode (bool, optional): If True, use faster interpolation; otherwise, use higher quality. Defaults to False.
 
     Returns:
         Image: The rectified image wrapped in the `Image` class.
     """
-    # Init and calculate rectification matrix
-    mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix=camera.info.camera_mtx,
-                                             distCoeffs=camera.info.distortion_mtx[:-1],
-                                             R=camera.info.rectification_mtx,
-                                             newCameraMatrix=camera.info.projection_mtx,
-                                             size=camera.info.shape,
-                                             m1type=cv2.CV_16SC2)
-    # Apply matrix
-    rectified_image = cv2.remap(np.array(camera._image_raw.image), mapx, mapy, interpolation=cv2.INTER_LANCZOS4)
+    mapx, mapy = cv2.initUndistortRectifyMap(
+        cameraMatrix=camera.info.camera_mtx,
+        distCoeffs=camera.info.distortion_mtx[:-1],
+        R=camera.info.rectification_mtx,
+        newCameraMatrix=camera.info.projection_mtx,
+        size=camera.info.shape,
+        m1type=cv2.CV_16SC2
+    )
+
+    interpolation_algorithm = cv2.INTER_LINEAR if performance_mode else cv2.INTER_LANCZOS4
+
+    rectified_image = cv2.remap(np.array(camera._image_raw.image), mapx, mapy, interpolation=interpolation_algorithm)
 
     return Image(PilImage.fromarray(rectified_image), camera._image_raw.timestamp)
 
@@ -47,9 +51,8 @@ def get_rect_img(camera: Camera) -> Image:
 def get_depth_map(camera_left: Camera, camera_right: Camera) -> np.ndarray:
     """Compute a depth map from a pair of stereo images.
 
-    This function uses stereo block matching to compute a disparity map and then
-    calculates the depth map using the disparity values, the focal length, and the baseline
-    distance between the two cameras.
+    Uses stereo block matching to compute a disparity map, then calculates the depth map using the disparity values,
+    focal length, and baseline distance between the two cameras.
 
     Args:
         camera_left (Camera): The left camera of the stereo pair.
@@ -64,7 +67,6 @@ def get_depth_map(camera_left: Camera, camera_right: Camera) -> np.ndarray:
     img1 = np.array(rect_left.image.convert('L'))  # Convert to grayscale
     img2 = np.array(rect_right.image.convert('L'))  # Convert to grayscale
 
-    # Create the block matching algorithm with high-quality settings
     stereo = cv2.StereoSGBM_create(
         minDisparity=0,
         numDisparities=128,
@@ -78,13 +80,10 @@ def get_depth_map(camera_left: Camera, camera_right: Camera) -> np.ndarray:
         mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY
     )
 
-    # Compute the disparity map
     disparity = stereo.compute(img1, img2)
 
-    # Normalize for better visualization
     disparity = cv2.normalize(disparity, disparity, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
-    # To avoid division by zero, set disparity values of 0 to a small value
     safe_disparity = np.where(disparity == 0, 0.000001, disparity)
 
     f = camera_right.info.focal_length
@@ -98,14 +97,13 @@ def get_depth_map(camera_left: Camera, camera_right: Camera) -> np.ndarray:
 def save_image(image: Image, output_path: str, suffix: str = '', metadata: Optional[CameraInformation] = None):
     """Save an image to disk with optional metadata.
 
-    This function saves an `Image` object to disk in PNG format. Metadata can be optionally
-    embedded into the image file.
+    Saves an `Image` object to disk in PNG format. Optionally, metadata can be embedded into the image file.
 
     Args:
         image (Image): The image to be saved.
         output_path (str): The directory where the image will be saved.
-        suffix (str): Optional suffix to be added to the image filename.
-        metadata (Optional[CameraInformation]): Optional metadata to embed in the image file.
+        suffix (str, optional): Optional suffix to be added to the image filename. Defaults to ''.
+        metadata (Optional[CameraInformation], optional): Metadata to embed in the image file. Defaults to None.
     """
     output_file = os.path.join(output_path, f'{image.get_timestamp()}{suffix}.png')
 
@@ -118,61 +116,39 @@ def save_image(image: Image, output_path: str, suffix: str = '', metadata: Optio
     image.save(output_file, 'PNG', pnginfo=info, compress_level=0)
 
 
-def save_all_camera_images(frame, output_path: str, create_subdir: bool = False):
+def save_all_images_in_frame(frame, output_path: str, create_subdir: bool = False):
     """Save all images from a frame's vehicle and tower cameras.
 
-    This function iterates through all cameras in the vehicle and tower of the frame.
-    If create_subdir is True, a subdirectory for each camera will be created and images will be saved there.
-    Otherwise, all images will be saved directly in the output_path.
+    Iterates through all cameras in the frame, saving each camera's image.
+    If `create_subdir` is True, a subdirectory for each camera will be created.
 
     Args:
         frame: The frame object containing vehicle and tower cameras.
         output_path (str): The directory where images will be saved.
-        create_subdir (bool): If True, creates a subdirectory for each camera.
+        create_subdir (bool, optional): If True, creates a subdirectory for each camera. Defaults to False.
     """
+    for agent in frame:
+        for camera_name, camera in agent.cameras:
+            if create_subdir:
+                camera_dir = os.path.join(output_path, camera_name.lower())
+                os.makedirs(camera_dir, exist_ok=True)
+                save_path = camera_dir
+            else:
+                save_path = output_path
 
-    def create_and_save_image(camera, camera_attr, base_output_path, create_subdir):
-        """Helper function to create a subdirectory and save the image."""
-        if camera and hasattr(camera, '_image_raw'):
-            try:
-                image = camera._image_raw
-                metadata = camera.info
-                if create_subdir:
-                    camera_dir = os.path.join(base_output_path, camera_attr.lower())
-                    # Create the directory if it doesn't exist
-                    os.makedirs(camera_dir, exist_ok=True)
-                    save_path = camera_dir
-                else:
-                    save_path = base_output_path
-
-                # Save the image in the respective directory or base directory
-                save_image(image, save_path, '', metadata)
-            except AttributeError as e:
-                print(f"Error processing {camera_attr}: {e}")
-            except Exception as e:
-                print(f"Unexpected error processing {camera_attr}: {e}")
-
-    # Iterate through all attributes in the 'vehicle.cameras' object
-    for camera_attr in dir(frame.vehicle.cameras):
-        camera = getattr(frame.vehicle.cameras, camera_attr, None)
-        create_and_save_image(camera, camera_attr, output_path, create_subdir)
-
-    # Iterate through all attributes in the 'tower.cameras' object
-    for camera_attr in dir(frame.tower.cameras):
-        camera = getattr(frame.tower.cameras, camera_attr, None)
-        create_and_save_image(camera, camera_attr, output_path, create_subdir)
+            save_image(camera._image_raw, save_path, '', camera.info)
 
 
 def load_image_with_metadata(file_path: str) -> Tuple[PilImage.Image, dict]:
     """Load an image along with its metadata.
 
-    This function loads an image file and extracts any embedded metadata.
+    Loads an image file and extracts any embedded metadata.
 
     Args:
         file_path (str): The path to the image file.
 
     Returns:
-        Tuple[PilImage, dict]: The loaded image and a dictionary containing the metadata.
+        Tuple[PilImage.Image, dict]: The loaded image and a dictionary containing the metadata.
     """
     image = PilImage.open(file_path)
 

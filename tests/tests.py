@@ -22,9 +22,8 @@ left_lidar = frame.vehicle.lidars.LEFT
 right_lidar = frame.vehicle.lidars.RIGHT
 top_lidar = frame.vehicle.lidars.TOP
 
-proj_img = ad.get_projection_img(camera=stereo_left, lidar=left_lidar, lidar2=right_lidar, lidar3=top_lidar,
-                                 static_color='yellow',
-                                 static_color2='red', static_color3='blue')
+proj_img = ad.get_projection_img(camera=stereo_left,
+                                 lidars=[(left_lidar, 'yellow'), (right_lidar, 'red'), (top_lidar, 'blue')])
 proj_img.show()
 '''
 back_left = frame.vehicle.cameras.BACK_LEFT
