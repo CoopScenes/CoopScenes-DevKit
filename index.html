@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="A Dataset for Infrastructure-Supported Perception Research with Focus on Public Transportation.">
+  <meta name="keywords" content="AEIF, OPNV, dataset">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nerfies: Deformable Neural Radiance Fields</title>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+
+    gtag('config', 'G-PYVRSFMDRL');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.svg">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+<body>
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div class="navbar-menu">
+    <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+      <a class="navbar-item" href="https://ameise.wandelgesellschaft.de/">
+      <span class="icon">
+          <i class="fas fa-home"></i>
+      </span>
+      </a>
+
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+          More Research
+        </a>
+        <div class="navbar-dropdown">
+          <a class="navbar-item" href="https://github.com/MarcelVSHNS/StixelNExT_Pro">
+            StixelNExT
+          </a>
+          <a class="navbar-item" href="https://github.com/MarcelVSHNS/pyStixel-lib">
+            pyStixel-lib
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</nav>
+
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">The AEIF Data Collection: A Dataset for Infrastructure-Supported Perception Research with Focus on Public Transportation</h1>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://github.com/MarcelVSHNS">MArcel Vosshans</a><sup>1,2</sup>,</span>
+            <span class="author-block">
+              <a href="https://github.com/AlexanderBMN">Alexander Baumann</a><sup>1</sup>,</span>
+            <span class="author-block">
+              <a href="https://scholar.google.de/citations?user=XRtrEuwAAAAJ&hl=de">Matthias Drueppel</a><sup>3</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://scholar.google.fr/citations?hl=en&user=NIdLQnUAAAAJ"> Omar Ait-Aider</a><sup>2</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://www.hs-esslingen.de/personen/ralf-woerner">Ralf Woerner</a><sup>1</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://scholar.google.fr/citations?hl=en&user=jODWpzQAAAAJ">Youcef Mezouar</a><sup>2</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://scholar.google.fr/citations?user=MzVfUCQAAAAJ&hl=en">Thao Dang</a><sup>1</sup>
+            </span>
+            <span class="author-block">
+              <a href="https://markus-enzweiler.de/">Markus Enzweiler</a><sup>1</sup>
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup>University of Esslingen</span>
+            <span class="author-block"><sup>2</sup>Clermont Auvergne INP / CNRS</span>
+            <span class="author-block"><sup>3</sup>Cooperative State University Stuttgart</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href="https://arxiv.org/pdf/2407.08261"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://arxiv.org/abs/2407.08261"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+              <!-- Code Link. -->
+              <span class="link-block">
+                <a href="https://github.com/MarcelVSHNS/AEIF-Dataset"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                  </a>
+              </span>
+              <!-- Colab Link. -->
+              <span class="link-block">
+                <a href="https://colab.research.google.com/drive/1p2cw3bSZ6B798qQ2jVnpvKQI5pv_-y_D?usp=sharing" target="_blank" rel="noopener noreferrer"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <img src="docs/imgs/colab.svg">
+                  </span>
+                  <span>&nbsp;Google Colab</span>
+                </a>
+              </span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Abstract. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            We present our vision and ongoing work for a novel dataset designed to advance research into the interoperability
+            of intelligent vehicles and infrastructure, specifically aimed at enhancing cooperative perception and
+            interaction in the realm of public transportation.
+          </p>
+          <p>
+            Unlike conventional datasets centered on ego-vehicle data, this approach encompasses both a stationary
+            sensor tower and a moving vehicle, each equipped with cameras, LiDARs, and GNSS, while the vehicle additionally
+            includes an inertial navigation system. Our setup features comprehensive calibration and time synchronization,
+            ensuring seamless and accurate sensor data fusion crucial for studying complex, dynamic scenes. Emphasizing
+            public transportation, the dataset targets to include scenes like bus station maneuvers and driving on dedicated
+            bus lanes, reflecting the specifics of small public buses. We introduce the open-source .4mse file format for
+            the new dataset, accompanied by a research kit. This kit provides tools such as ego-motion compensation or
+            LiDAR-to-camera projection enabling advanced research on intelligent vehicle-infrastructure integration. Our
+            approach does not include annotations; however, we plan to implement automatically generated labels sourced
+            from state-of-the-art public repositories.
+          </p>
+        </div>
+      </div>
+    </div>
+    <!--/ Abstract. -->
+  </div>
+</section>
+
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>@misc{vosshans2024aeifdatacollectiondataset,
+  author    = {Marcel Vosshans and Alexander Baumann and Matthias Drueppel and Omar Ait-Aider and Ralf Woerner and Youcef Mezouar and Thao Dang and Markus Enzweiler},
+  title     = {The AEIF Data Collection: A Dataset for Infrastructure-Supported Perception Research with Focus on Public Transportation},
+  url       = {https://arxiv.org/abs/2407.08261},
+  year      = {2024},
+}</code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <a class="icon-link"
+         href="https://arxiv.org/abs/2407.08261">
+        <i class="external-link"></i>
+      </a>
+      <a class="icon-link" href="https://github.com/MarcelVSHNS/AEIF-Dataset" class="external-link" disabled>
+        <i class="fab fa-github"></i>
+      </a>
+    </div>
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            The template is borrowed from <a
+              href="https://github.com/nerfies/nerfies.github.io">source code</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
