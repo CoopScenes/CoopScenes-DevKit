@@ -2,7 +2,7 @@
 
 ![AmeiseLogo](https://raw.githubusercontent.com/MarcelVSHNS/ameise-dataset/main/docs/Ameise_logo.png) 
 
-Dev-Kit for records collected during [Project AMEISE](https://ameise.wandelgesellschaft.de/)
+Dev-Kit for records collected during [Project AMEISE](https://ameise.wandelgesellschaft.de/). Visit our AEIF Data Collection Website at [https://aeif-dataset.eu](https://aeif-dataset.eu).
 
 ## Description
 
