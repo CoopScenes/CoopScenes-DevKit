@@ -59,7 +59,7 @@ class Camera:
             return get_rect_img(self)
         raise AttributeError("Image is not set.")
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr) -> PilImage:
         """Handle dynamic access to raw image attributes."""
         if self._image_raw is not None and hasattr(self._image_raw, attr):
             return getattr(self.image, attr)
@@ -112,7 +112,7 @@ class Lidar:
         self.info = info
         self.points = points
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr) -> np.array:
         """Handle dynamic access to point cloud attributes."""
         if self.points is not None and hasattr(self.points, attr):
             return getattr(self.points, attr)
