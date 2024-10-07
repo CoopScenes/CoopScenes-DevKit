@@ -23,39 +23,48 @@ import matplotlib.pyplot as plt
 
 from aeifdataset.data import Lidar, Camera
 from aeifdataset.utils import get_depth_map, get_projection
+from aeifdataset.utils.image_functions import get_disparity_map
 
 
 def get_colored_stereo_image(camera_left: Camera, camera_right: Camera, cmap_name: str = "viridis",
-                             min_value: int = 0, max_value: int = 40) -> PilImage:
+                             min_value: int = 0, max_value: int = 1000) -> PilImage:
     """Compute and return the depth map between two stereo camera images as a color-mapped image.
 
-    This function computes the depth map from a pair of rectified stereo images.
-    The resulting depth map is color-mapped and returned as a PIL image.
+    This function computes the depth map from a pair of rectified stereo images using disparity calculation.
+    The resulting depth map is normalized between the specified `min_value` and `max_value`, color-mapped
+    using the specified colormap, and returned as a PIL image.
+
+    Depth values below `min_value` are set to `min_value` for normalization, and values above `max_value`
+    can optionally be masked and set to black in the final image.
 
     Args:
         camera_left (Camera): The left camera of the stereo pair.
         camera_right (Camera): The right camera of the stereo pair.
         cmap_name (str): The name of the colormap to use for visualization. Defaults to "viridis".
-        min_value (int): The minimum depth value to be considered in the map. Values below this threshold will be masked (set to black). Defaults to 0.
-        max_value (int): The maximum value for normalization. Depth values will be normalized between this and the `min_value`. Defaults to 40.
+        min_value (int): The minimum depth value to be considered for normalization. Depth values below this
+                         threshold are clamped to this value. Defaults to 0.
+        max_value (int): The maximum depth value for normalization. Depth values will be normalized between
+                         this and `min_value`. Values above this threshold can be masked and set to black.
+                         Defaults to 1000.
 
     Returns:
-        PilImage: The generated depth map with the specified colormap applied.
+        PilImage: The generated depth map with the specified colormap applied, returned as an RGB PIL image.
     """
     cmap = plt.get_cmap(cmap_name)
-    depth_map = get_depth_map(camera_left, camera_right)
+    disparity_map = get_disparity_map(camera_left, camera_right)[:,128:]
 
-    mask = depth_map > max_value
-    norm_values = (depth_map - min_value) / (max_value - min_value)
-    norm_values = np.clip(norm_values, 0, 1)
+    norm_values = (disparity_map - min_value) / (max_value - min_value)
 
     colored_map = cmap(norm_values)
+
+    mask = disparity_map > max_value
     colored_map[mask] = [0, 0, 0, 1]  # Set masked values to black
+
     colored_map = (colored_map[:, :, :3] * 255).astype(np.uint8)
 
     img = PilImage.fromarray(colored_map).convert('RGB')
-    return img
 
+    return img
 
 def plot_points_on_image(image: PilImage, points: List[Tuple[float, float]], points_3d: np.array,
                          cmap_name: str = "inferno", radius: int = 2,

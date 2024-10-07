@@ -48,7 +48,7 @@ def get_rect_img(camera: Camera, performance_mode: bool = False) -> Image:
     return Image(PilImage.fromarray(rectified_image), camera._image_raw.timestamp)
 
 
-def get_depth_map(camera_left: Camera, camera_right: Camera,
+def get_disparity_map(camera_left: Camera, camera_right: Camera,
                   stereo_param: Optional[cv2.StereoSGBM] = None) -> np.ndarray:
     """Compute a depth map from a pair of stereo images.
 
@@ -71,14 +71,8 @@ def get_depth_map(camera_left: Camera, camera_right: Camera,
     # Disparity computation
     stereo = stereo_param or _create_default_stereo_sgbm()
     disparity_map = stereo.compute(img1_gray, img2_gray).astype(np.float32)
-
-    # Handle zero disparities (to avoid division by zero in depth calculation)
-    disparity_map[disparity_map == 0] = 0.000001
-
-    # Depth computation
-    depth_map = _disparity_to_depth(disparity_map, camera_right)
-
-    return depth_map
+    
+    return disparity_map
 
 
 def _create_default_stereo_sgbm() -> cv2.StereoSGBM:
@@ -103,6 +97,16 @@ def _create_default_stereo_sgbm() -> cv2.StereoSGBM:
     return stereo
 
 
+def get_depth_map(camera_left: Camera, camera_right: Camera,
+                  stereo_param: Optional[cv2.StereoSGBM] = None):
+
+    disparity_map = get_disparity_map(camera_left, camera_right, stereo_param)
+
+    depth_map = _disparity_to_depth(disparity_map, camera_right)
+
+    return depth_map
+
+
 def _disparity_to_depth(disparity_map: np.ndarray, camera: Camera) -> np.ndarray:
     """Convert a disparity map to a depth map using camera parameters.
 
@@ -113,11 +117,11 @@ def _disparity_to_depth(disparity_map: np.ndarray, camera: Camera) -> np.ndarray
     Returns:
         np.ndarray: The computed depth map.
     """
-    focal_length = camera.info.focal_length
-    baseline = abs(camera.info.stereo_transform.translation[0]) * 1000  # Convert to mm
+    focal_length = camera.info.camera_mtx[0][0]
+    baseline = abs(camera.info.stereo_transform.translation[0])  # Convert to mm
 
     # Depth calculation: depth = focal_length * baseline / disparity
-    depth_map = (focal_length * baseline) / disparity_map
+    depth_map = (focal_length * baseline) / (disparity_map + 1e-6)
 
     return depth_map
 
