@@ -5,15 +5,15 @@ the effects of correcting the extrinsic parameters of the camera, allowing users
 
 Functions:
     get_colored_stereo_image(camera_left, camera_right, cmap_name, min_value, max_value):
-        Compute and return the depth map between two stereo camera images as a color-mapped image.
+        Computes and returns the depth map between two stereo camera images as a color-mapped image.
     plot_points_on_image(image, points, points_3d, cmap_name, radius, static_color, max_range_factor):
-        Plot 2D points on a camera image with optional color mapping based on range values.
+        Plots 2D points on a camera image with optional color mapping based on range values.
     get_projection_img(camera, lidars, max_range_factor):
-        Generate an image with LiDAR points projected onto the camera image.
-    show_points(lidar):
-        Display the 3D point cloud from a LiDAR sensor using Open3D.
+        Generates an image with LiDAR points projected onto the camera image.
+    show_points(points):
+        Displays the 3D point cloud from a LiDAR sensor or a NumPy array of points using Open3D.
     show_tf_correction(camera, lidar_with_color, roll_correction, pitch_correction, yaw_correction, max_range_factor):
-        Display the effect of correcting the extrinsic parameters on the projection of LiDAR points onto a camera image, showing both raw and corrected projections side-by-side.
+        Displays the effect of correcting the extrinsic parameters on the projection of LiDAR points onto a camera image, showing both raw and corrected projections side-by-side.
 """
 from typing import Optional, Union, Tuple, List
 from PIL import Image as PilImage, ImageDraw, ImageColor
@@ -45,7 +45,7 @@ def get_colored_stereo_image(camera_left: Camera, camera_right: Camera, cmap_nam
     cmap = plt.get_cmap(cmap_name)
     depth_map = get_depth_map(camera_left, camera_right)
 
-    mask = depth_map > min_value
+    mask = depth_map > max_value
     norm_values = (depth_map - min_value) / (max_value - min_value)
     norm_values = np.clip(norm_values, 0, 1)
 
@@ -133,28 +133,31 @@ def get_projection_img(camera: Camera,
     return proj_img
 
 
-def show_points(lidar: Lidar) -> None:
-    """Display the point cloud from a LiDAR sensor.
+def show_points(points: Union[Lidar, np.array]) -> None:
+    """Display the 3D point cloud from a LiDAR sensor or a NumPy array of points.
 
-    Visualize the 3D point cloud data captured by the LiDAR sensor using Open3D.
+    This function visualizes the 3D point cloud data from a LiDAR sensor or a NumPy array
+    using Open3D for 3D visualization.
 
     Args:
-        lidar (Lidar): The LiDAR sensor containing the 3D point cloud data.
+        points (Union[Lidar, np.array]): The LiDAR sensor or a NumPy array containing the 3D point cloud data.
+
+    Raises:
+        ImportError: If Open3D is not installed.
 
     Returns:
         None
     """
     if importlib.util.find_spec("open3d") is None:
         raise ImportError('Install open3d to use this function with: python -m pip install open3d')
-    import open3d as o3d
-    points = lidar
 
-    xyz_points = np.stack((points['x'], points['y'], points['z']), axis=-1).astype(np.float64)
+    import open3d as o3d
+    if isinstance(points, Lidar):
+        points = np.stack((points.points['x'], points.points['y'], points.points['z']), axis=-1).astype(np.float64)
 
     pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(xyz_points)
+    pcd.points = o3d.utility.Vector3dVector(points)
 
-    pcd.estimate_normals()
     o3d.visualization.draw_geometries([pcd])
 
 

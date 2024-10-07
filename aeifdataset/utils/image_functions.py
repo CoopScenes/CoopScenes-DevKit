@@ -155,16 +155,17 @@ def save_all_images_in_frame(frame, output_path: str, create_subdir: bool = Fals
         output_path (str): The directory where images will be saved.
         create_subdir (bool, optional): If True, creates a subdirectory for each camera. Defaults to False.
     """
+    os.makedirs(output_path, exist_ok=True)
     for agent in frame:
         for camera_name, camera in agent.cameras:
             if create_subdir:
                 camera_dir = os.path.join(output_path, camera_name.lower())
                 os.makedirs(camera_dir, exist_ok=True)
                 save_path = camera_dir
+                save_image(camera._image_raw, save_path, '', camera.info)
             else:
                 save_path = output_path
-
-            save_image(camera._image_raw, save_path, '', camera.info)
+                save_image(camera._image_raw, save_path, f"_{camera_name.lower()}", camera.info)
 
 
 def load_image_with_metadata(file_path: str) -> Tuple[PilImage.Image, dict]:
