@@ -123,7 +123,7 @@ def plot_points_on_image(image: PilImage, points: np.ndarray, points_3d: np.ndar
 def get_projection_img(camera: Camera,
                        *lidars: Union[Lidar, Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]],
                        cmap_name: str = "Spectral", radius: float = 2.5,
-                       min_range: Optional[float] = 3, max_range: Optional[float] = 50,
+                       min_range: Optional[float] = 5, max_range: Optional[float] = 50,
                        opacity: float = 0.5) -> PilImage:
     """Generate an image with LiDAR points projected onto it.
 

@@ -21,10 +21,10 @@ proj_img = ad.get_projection_img(frame.vehicle.cameras.STEREO_LEFT,
                                  frame.vehicle.lidars.TOP, frame.vehicle.lidars.LEFT, frame.vehicle.lidars.RIGHT)
 
 proj_img.show()
-proj_img2 = ad.get_projection_img(frame.tower.cameras.VIEW_1,
-                                  frame.tower.lidars.UPPER_PLATFORM, frame.tower.lidars.VIEW_1,
-                                  frame.tower.lidars.VIEW_2)
-proj_img2.show()
+# proj_img2 = ad.get_projection_img(frame.tower.cameras.VIEW_1,
+#                                  frame.tower.lidars.UPPER_PLATFORM, frame.tower.lidars.VIEW_1,
+#                                  frame.tower.lidars.VIEW_2)
+# proj_img2.show()
 
 '''
 points = []
