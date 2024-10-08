@@ -4,13 +4,13 @@ It includes functionalities for image rectification, depth map computation, savi
 loading images with embedded metadata, and saving all images from a frame.
 
 Functions:
-    get_rect_img(camera, performance_mode=False): Rectify the provided image using the camera's intrinsic and extrinsic parameters.
+    get_rect_img(data, performance_mode=False): Rectify the provided image using the camera's intrinsic and extrinsic parameters.
     get_depth_map(camera_left, camera_right): Compute a depth map from a pair of stereo images.
     save_image(image, output_path, suffix='', metadata=None): Save an image to disk with optional metadata.
     save_all_images_in_frame(frame, output_path, create_subdir=False): Save all images from a frame's vehicle and tower cameras.
     load_image_with_metadata(file_path): Load an image along with its embedded metadata.
 """
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 import os
 from PIL import Image as PilImage
 from PIL.PngImagePlugin import PngInfo
@@ -19,33 +19,45 @@ import numpy as np
 import cv2
 
 
-def get_rect_img(camera: Camera, performance_mode: bool = False) -> Image:
-    """Rectify the provided image using the camera's intrinsic and extrinsic parameters.
+def get_rect_img(data: Union[Camera, Tuple[Image, CameraInformation]], performance_mode: bool = False) -> Image:
+    """Rectify the provided image using either a Camera object or an Image with CameraInformation.
 
     Performs image rectification using the camera matrix, distortion coefficients, rectification matrix,
     and projection matrix. The rectified image is returned as an `Image` object.
 
     Args:
-        camera (Camera): The camera object containing the image and calibration parameters.
+        data (Union[Camera, Tuple[Image, CameraInformation]]): Either a Camera object containing the image and calibration parameters,
+            or a tuple of an Image object and a CameraInformation object.
         performance_mode (bool, optional): If True, use faster interpolation; otherwise, use higher quality. Defaults to False.
 
     Returns:
         Image: The rectified image wrapped in the `Image` class.
     """
+    if isinstance(data, Camera):
+        # Handle the case where a Camera object is passed
+        image = data._image_raw
+        camera_info = data.info
+    else:
+        # Handle the case where an Image and CameraInformation are passed
+        image, camera_info = data
+
+    # Perform the rectification
     mapx, mapy = cv2.initUndistortRectifyMap(
-        cameraMatrix=camera.info.camera_mtx,
-        distCoeffs=camera.info.distortion_mtx[:-1],
-        R=camera.info.rectification_mtx,
-        newCameraMatrix=camera.info.projection_mtx,
-        size=camera.info.shape,
+        cameraMatrix=camera_info.camera_mtx,
+        distCoeffs=camera_info.distortion_mtx[:-1],
+        R=camera_info.rectification_mtx,
+        newCameraMatrix=camera_info.projection_mtx,
+        size=camera_info.shape,
         m1type=cv2.CV_16SC2
     )
 
     interpolation_algorithm = cv2.INTER_LINEAR if performance_mode else cv2.INTER_LANCZOS4
 
-    rectified_image = cv2.remap(np.array(camera._image_raw.image), mapx, mapy, interpolation=interpolation_algorithm)
+    # Convert image to numpy array and perform rectification
+    rectified_image = cv2.remap(np.array(image.image), mapx, mapy, interpolation=interpolation_algorithm)
 
-    return Image(PilImage.fromarray(rectified_image), camera._image_raw.timestamp)
+    # Return the rectified image wrapped in the Image class with its timestamp
+    return Image(PilImage.fromarray(rectified_image), image.timestamp)
 
 
 def get_disparity_map(camera_left: Camera, camera_right: Camera,
