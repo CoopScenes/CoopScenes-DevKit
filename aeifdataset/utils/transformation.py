@@ -12,7 +12,8 @@ Functions:
     transform_points_to_origin: Transforms LiDAR points to the origin of the associated agent.
 """
 from typing import Union, Tuple
-from aeifdataset.data import Lidar, Camera, IMU, GNSS, LidarInformation
+from aeifdataset.data import Lidar, Camera, IMU, GNSS, Dynamics, CameraInformation, LidarInformation, GNSSInformation, \
+    IMUInformation, DynamicsInformation
 from scipy.spatial.transform import Rotation as R
 import numpy as np
 
@@ -163,37 +164,45 @@ class Transformation:
                 f"  rotation=[{rotation_str}]\n")
 
 
-def get_transformation(sensor: Union[Camera, Lidar, IMU, GNSS]) -> Transformation:
-    """Create a Transformation object for a given sensor.
+def get_transformation(sensor_info: Union[
+    Camera, Lidar, IMU, GNSS, CameraInformation, LidarInformation, IMUInformation, GNSSInformation]) -> Transformation:
+    """Create a Transformation object for a given sensor or its corresponding information object.
 
     Args:
-        sensor (Union[Camera, Lidar, IMU, GNSS]): The sensor for which to create the transformation.
+        sensor_info (Union[Camera, Lidar, IMU, GNSS, CameraInformation, LidarInformation, IMUInformation, GNSSInformation]):
+            Either a sensor object (Camera, Lidar, IMU, GNSS) or directly the sensor's information object.
 
     Returns:
-        Transformation: The transformation object for the given sensor.
+        Transformation: The transformation object for the given sensor or sensor information.
 
     Raises:
-        AssertionError: If the sensor is not a Camera, Lidar, IMU, or GNSS object.
+        ValueError: If Dynamics or DynamicsInformation is passed, as they are not supported.
     """
-    # Assert that sensor is of the correct type
-    assert isinstance(sensor, (Camera, Lidar, IMU, GNSS)), "sensor must be a Camera, Lidar, IMU, or GNSS object"
-    if 'view' in getattr(sensor.info, 'name', ''):
+    if hasattr(sensor_info, 'info'):
+        sensor_info = sensor_info.info
+
+    if isinstance(sensor_info, (Dynamics, DynamicsInformation)):
+        raise ValueError(
+            "Dynamics and DynamicsInformation are not supported for this function yet. \
+             Create your own Transformation object off the correct sensor until implemented.")
+
+    if 'view' in getattr(sensor_info, 'name', ''):
         sensor_to = 'lidar_upper_platform/os_sensor'
     else:
         sensor_to = 'lidar_top/os_sensor'
 
-    if isinstance(sensor, Camera):
-        sensor_at = f'cam_{sensor.info.name}'
-    elif isinstance(sensor, Lidar):
-        if 'view' in getattr(sensor.info, 'name', ''):
-            sensor_at = f'lidar_{sensor.info.name}'
+    if isinstance(sensor_info, CameraInformation):
+        sensor_at = f'cam_{sensor_info.name}'
+    elif isinstance(sensor_info, LidarInformation):
+        if 'view' in getattr(sensor_info, 'name', ''):
+            sensor_at = f'lidar_{sensor_info.name}'
         else:
-            sensor_at = f'lidar_{sensor.info.name}/os_sensor'
+            sensor_at = f'lidar_{sensor_info.name}/os_sensor'
     else:
         sensor_at = 'ins'
 
-    x, y, z = sensor.info.extrinsic.xyz
-    roll, pitch, yaw = sensor.info.extrinsic.rpy
+    x, y, z = sensor_info.extrinsic.xyz
+    roll, pitch, yaw = sensor_info.extrinsic.rpy
 
     tf = Transformation(sensor_at, sensor_to, x, y, z, roll, pitch, yaw)
     return tf
@@ -224,7 +233,7 @@ def transform_points_to_origin(data: Union[Lidar, Tuple[np.ndarray, LidarInforma
         points = np.stack((points[:, 0], points[:, 1], points[:, 2], np.ones((points.shape[0]))))
 
     # Get the transformation matrix and apply it
-    trans = get_transformation(Lidar(lidar_info))
+    trans = get_transformation(lidar_info)
     transformed_points = trans.transformation_mtx @ points
 
     return transformed_points.T[:, :3]

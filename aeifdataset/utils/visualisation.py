@@ -113,8 +113,7 @@ def plot_points_on_image(image: PilImage, points: np.ndarray, points_3d: np.ndar
 
 
 def get_projection_img(camera: Camera,
-                       lidars: Union[Lidar, Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]],
-                       List[Union[Lidar, Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]]]],
+                       *lidars: Union[Lidar, Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]],
                        cmap_name: str = "inferno_r", radius: float = 1.5,
                        max_range: Optional[float] = None) -> PilImage:
     """Generate an image with LiDAR points projected onto it.
@@ -125,9 +124,8 @@ def get_projection_img(camera: Camera,
 
     Args:
         camera (Camera): The camera onto which the LiDAR points are projected.
-        lidars (Union[Lidar, Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]],
-                 List[Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]]]): A single LiDAR sensor,
-                 a tuple containing a LiDAR and an optional static color, or a list of such tuples.
+        *lidars (Union[Lidar, Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]]): One or more LiDAR sensors,
+                 or tuples containing a LiDAR and an optional static color.
         cmap_name (str): The name of the colormap used for dynamic point coloring. Defaults to 'inferno_r'.
         radius (float): The radius for plotting the LiDAR points on the image. Defaults to 1.5.
         max_range (Optional[float]): The maximum range for color normalization. If None, the range will be automatically
@@ -138,14 +136,16 @@ def get_projection_img(camera: Camera,
     """
     proj_img = camera.image.image.copy()
 
-    if isinstance(lidars, Lidar):
-        lidars = [(lidars, None)]
-    elif isinstance(lidars, list):
-        lidars = [(lidar, None) if isinstance(lidar, Lidar) else lidar for lidar in lidars]
-    elif isinstance(lidars, tuple):
-        lidars = [lidars]
+    lidar_list = []
+    for lidar in lidars:
+        if isinstance(lidar, Lidar):
+            lidar_list.append((lidar, None))
+        elif isinstance(lidar, tuple) and isinstance(lidar[0], Lidar):
+            lidar_list.append(lidar)
+        else:
+            raise ValueError("Each argument must be either a Lidar object or a tuple of (Lidar, optional color).")
 
-    for lidar, static_color in lidars:
+    for lidar, static_color in lidar_list:
         pts, proj = get_projection(lidar, camera)
         proj_img = plot_points_on_image(proj_img, proj, pts, static_color=static_color, cmap_name=cmap_name,
                                         radius=radius, max_range=max_range)
