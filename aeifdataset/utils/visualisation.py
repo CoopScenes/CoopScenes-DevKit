@@ -6,12 +6,12 @@ the effects of correcting the extrinsic parameters of the camera, allowing users
 Functions:
     get_colored_stereo_image(camera_left, camera_right, cmap_name, min_value, max_value):
         Computes and returns the depth map between two stereo camera images as a color-mapped image.
-    plot_points_on_image(image, points, points_3d, cmap_name, radius, static_color, max_range_factor):
-        Plots 2D points on a camera image with optional color mapping based on range values.
-    get_projection_img(camera, lidars, max_range_factor):
-        Generates an image with LiDAR points projected onto the camera image.
-    show_points(points):
-        Displays the 3D point cloud from a LiDAR sensor or a NumPy array of points using Open3D.
+    plot_points_on_image(image, points, points_3d, cmap_name, radius, static_color, max_range):
+        Plots 2D points on a camera image with optional color mapping based on range values or static color.
+    get_projection_img(camera, lidars, cmap_name, radius, max_range):
+        Generates an image with LiDAR points projected onto the camera image with optional colormap and radius settings.
+    show_points(points, colors, point_size):
+        Displays the 3D point cloud from a LiDAR sensor or NumPy arrays of points using Open3D.
     show_tf_correction(camera, lidar_with_color, roll_correction, pitch_correction, yaw_correction, max_range_factor):
         Displays the effect of correcting the extrinsic parameters on the projection of LiDAR points onto a camera image, showing both raw and corrected projections side-by-side.
 """
@@ -22,36 +22,35 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from aeifdataset.data import Lidar, Camera
-from aeifdataset.utils import get_depth_map, get_projection
+from aeifdataset.utils import get_projection
 from aeifdataset.utils.image_functions import get_disparity_map
 
 
 def get_colored_stereo_image(camera_left: Camera, camera_right: Camera, cmap_name: str = "viridis",
                              min_value: int = 0, max_value: int = 1000) -> PilImage:
-    """Compute and return the depth map between two stereo camera images as a color-mapped image.
+    """Compute and return the disparity map between two stereo camera images as a color-mapped image.
 
-    This function computes the depth map from a pair of rectified stereo images using disparity calculation.
-    The resulting depth map is normalized between the specified `min_value` and `max_value`, color-mapped
-    using the specified colormap, and returned as a PIL image.
+       This function computes the disparity map from a pair of rectified stereo images using disparity calculation.
+       The resulting disparity map is normalized between the specified `min_value` and `max_value`, color-mapped
+       using the specified colormap, and returned as a PIL image.
 
-    Depth values below `min_value` are set to `min_value` for normalization, and values above `max_value`
-    can optionally be masked and set to black in the final image.
+       Disparity values below `min_value` are set to `min_value` for normalization, and values above `max_value`
+       can optionally be masked and set to black in the final image.
 
-    Args:
-        camera_left (Camera): The left camera of the stereo pair.
-        camera_right (Camera): The right camera of the stereo pair.
-        cmap_name (str): The name of the colormap to use for visualization. Defaults to "viridis".
-        min_value (int): The minimum depth value to be considered for normalization. Depth values below this
-                         threshold are clamped to this value. Defaults to 0.
-        max_value (int): The maximum depth value for normalization. Depth values will be normalized between
-                         this and `min_value`. Values above this threshold can be masked and set to black.
-                         Defaults to 1000.
+       Args:
+           camera_left (Camera): The left camera of the stereo pair.
+           camera_right (Camera): The right camera of the stereo pair.
+           cmap_name (str): The name of the colormap to use for visualization. Defaults to "viridis".
+           min_value (int): The minimum disparity value to be considered for normalization. Disparity values below this
+                            threshold are clamped to this value. Defaults to 0.
+           max_value (int): The maximum disparity value for normalization. Disparity values will be normalized between
+                            this and `min_value`. Values above this threshold are set to black. Defaults to 1000.
 
-    Returns:
-        PilImage: The generated depth map with the specified colormap applied, returned as an RGB PIL image.
-    """
+       Returns:
+           PilImage: The generated disparity map with the specified colormap applied, returned as an RGB PIL image.
+       """
     cmap = plt.get_cmap(cmap_name)
-    disparity_map = get_disparity_map(camera_left, camera_right)[:,128:]
+    disparity_map = get_disparity_map(camera_left, camera_right)[:, 128:]
 
     norm_values = (disparity_map - min_value) / (max_value - min_value)
 
@@ -66,10 +65,11 @@ def get_colored_stereo_image(camera_left: Camera, camera_right: Camera, cmap_nam
 
     return img
 
-def plot_points_on_image(image: PilImage, points: List[Tuple[float, float]], points_3d: np.array,
-                         cmap_name: str = "inferno", radius: int = 2,
+
+def plot_points_on_image(image: PilImage, points: np.ndarray, points_3d: np.ndarray,
+                         cmap_name: str = "inferno_r", radius: float = 1.5,
                          static_color: Optional[Union[str, Tuple[int, int, int]]] = None,
-                         max_range_factor: float = 0.5) -> PilImage:
+                         max_range: Optional[float] = None) -> PilImage:
     """Plot 2D points on a camera image with optional color mapping.
 
     This function plots a list of 2D points onto a camera image. If a static color is provided,
@@ -78,13 +78,14 @@ def plot_points_on_image(image: PilImage, points: List[Tuple[float, float]], poi
 
     Args:
         image (PilImage): The camera image onto which the points will be plotted.
-        points (List[Tuple[float, float]]): The 2D coordinates of the points to plot.
-        points_3d (np.array): The corresponding 3D points used to calculate the range.
-        cmap_name (str): The name of the matplotlib colormap to use for color mapping. Defaults to "inferno".
-        radius (int): The radius of the points to plot. Defaults to 2.
+        points (np.ndarray): The 2D coordinates of the points to plot.
+        points_3d (np.ndarray): The corresponding 3D points used to calculate the range.
+        cmap_name (str): The name of the matplotlib colormap to use for color mapping. Defaults to "inferno_r".
+        radius (float): The radius of the points to plot. Defaults to 1.5.
         static_color (Optional[Union[str, Tuple[int, int, int]]]): A string representing a color name (e.g., "red")
             or an RGB tuple. If provided, this color is used for all points. Defaults to None.
-        max_range_factor (float): A factor used to scale the maximum range for normalization. Defaults to 0.5.
+        max_range (Optional[float]): The maximum range value for normalization. If None, the maximum range will
+            be determined from the 3D points.
 
     Returns:
         PilImage: The image with the points plotted on it.
@@ -100,7 +101,7 @@ def plot_points_on_image(image: PilImage, points: List[Tuple[float, float]], poi
         cmap = plt.get_cmap(cmap_name)
         ranges = np.linalg.norm(points_3d, axis=1)
         val_min = np.min(ranges)
-        val_max = np.max(ranges) * max_range_factor
+        val_max = max_range if max_range is not None else np.max(ranges)
         norm_values = (ranges - val_min) / (val_max - val_min)
 
         for (x, y), value in zip(points, norm_values):
@@ -113,16 +114,24 @@ def plot_points_on_image(image: PilImage, points: List[Tuple[float, float]], poi
 
 def get_projection_img(camera: Camera,
                        lidars: Union[Lidar, Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]],
-                       List[Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]]],
-                       max_range_factor: float = 0.5) -> PilImage:
+                       List[Union[Lidar, Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]]]],
+                       cmap_name: str = "inferno_r", radius: float = 1.5,
+                       max_range: Optional[float] = None) -> PilImage:
     """Generate an image with LiDAR points projected onto it.
+
+    This function projects LiDAR points onto a camera image and allows for optional
+    coloring of the points. It supports a colormap for dynamic coloring based on
+    range or other factors, as well as a static color option for individual LiDAR sensors.
 
     Args:
         camera (Camera): The camera onto which the LiDAR points are projected.
         lidars (Union[Lidar, Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]],
-                 List[Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]]]): A single LiDAR sensor or
+                 List[Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]]]): A single LiDAR sensor,
                  a tuple containing a LiDAR and an optional static color, or a list of such tuples.
-        max_range_factor (float): A factor used to scale the maximum range for normalization. Defaults to 0.5.
+        cmap_name (str): The name of the colormap used for dynamic point coloring. Defaults to 'inferno_r'.
+        radius (float): The radius for plotting the LiDAR points on the image. Defaults to 1.5.
+        max_range (Optional[float]): The maximum range for color normalization. If None, the range will be automatically
+            determined based on the LiDAR data.
 
     Returns:
         PilImage: The image with the LiDAR points projected onto it.
@@ -131,25 +140,33 @@ def get_projection_img(camera: Camera,
 
     if isinstance(lidars, Lidar):
         lidars = [(lidars, None)]
+    elif isinstance(lidars, list):
+        lidars = [(lidar, None) if isinstance(lidar, Lidar) else lidar for lidar in lidars]
     elif isinstance(lidars, tuple):
         lidars = [lidars]
 
     for lidar, static_color in lidars:
         pts, proj = get_projection(lidar, camera)
-        proj_img = plot_points_on_image(proj_img, proj, pts, static_color=static_color,
-                                        max_range_factor=max_range_factor)
+        proj_img = plot_points_on_image(proj_img, proj, pts, static_color=static_color, cmap_name=cmap_name,
+                                        radius=radius, max_range=max_range)
 
     return proj_img
 
 
-def show_points(points: Union[Lidar, np.array]) -> None:
-    """Display the 3D point cloud from a LiDAR sensor or a NumPy array of points.
+def show_points(points: Union[Lidar, np.ndarray],
+                colors: Optional[np.ndarray] = None,
+                point_size: Optional[float] = None) -> None:
+    """Display the 3D point cloud from a LiDAR sensor or NumPy arrays of points and colors.
 
-    This function visualizes the 3D point cloud data from a LiDAR sensor or a NumPy array
-    using Open3D for 3D visualization.
+    This function visualizes the 3D point cloud data from a LiDAR sensor or NumPy arrays
+    using Open3D for 3D visualization. If colors are provided, they will be applied to the
+    points in the visualization. The point size can also be adjusted.
 
     Args:
-        points (Union[Lidar, np.array]): The LiDAR sensor or a NumPy array containing the 3D point cloud data.
+        points (Union[Lidar, np.ndarray]): The LiDAR sensor or a NumPy array containing the 3D point cloud data.
+        colors (Optional[np.ndarray]): An optional NumPy array containing RGB colors for each point.
+        point_size (float): The size of the points in the visualization. Defaults to 8.0 if colors are provided,
+                            otherwise 1.0.
 
     Raises:
         ImportError: If Open3D is not installed.
@@ -167,7 +184,22 @@ def show_points(points: Union[Lidar, np.array]) -> None:
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(points)
 
-    o3d.visualization.draw_geometries([pcd])
+    if point_size is None:
+        point_size = 8.0 if colors is not None else 1.0
+
+    if colors is not None:
+        pcd.colors = o3d.utility.Vector3dVector(colors)
+
+    vis = o3d.visualization.Visualizer()
+    vis.create_window()
+    vis.add_geometry(pcd)
+
+    # Adjust the point size
+    render_option = vis.get_render_option()
+    render_option.point_size = point_size
+
+    vis.run()
+    vis.destroy_window()
 
 
 def show_tf_correction(camera: Camera,

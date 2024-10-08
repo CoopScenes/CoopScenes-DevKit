@@ -17,4 +17,27 @@ example_record_1 = DataRecord("/mnt/dataset/dataset/seq_1_maille/packed/id00501_
 
 frame = example_record_1[0]
 
-ad.get_projection_img(frame.tower.cameras.VIEW_2, frame.tower.lidars.VIEW_2).show()
+stereo_img = ad.get_depth_map(frame.vehicle.cameras.STEREO_LEFT, frame.vehicle.cameras.STEREO_RIGHT)
+
+stereo_img.show()
+'''
+points = []
+points_color = []
+
+for _, camera in frame.vehicle.cameras:
+    if _ == "STEREO_RIGHT":
+        continue
+    for _, lidar in frame.vehicle.lidars:
+        pts_3d, proj_2d, color = ad.get_rgb_projection(lidar, camera)
+        points.append(ad.transform_points_to_origin((pts_3d, lidar.info)))
+        points_color.append(color)
+
+points = np.vstack(points)
+points_color = np.vstack(points_color)
+ad.show_points(points, points_color)
+
+
+proj_img = ad.get_projection_img(frame.vehicle.cameras.STEREO_LEFT,
+                                 [frame.vehicle.lidars.TOP, frame.vehicle.lidars.LEFT])
+proj_img.show()
+'''

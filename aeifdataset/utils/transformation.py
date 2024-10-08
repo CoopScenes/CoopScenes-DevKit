@@ -1,17 +1,18 @@
 """
-This module provides classes and functions for handling 3D transformations, specifically for sensors like
-Lidar, Camera, IMU, and GNSS. It includes utilities to create transformations, combine and invert them,
-and extract transformation parameters such as translation and rotation.
+This module provides functionality for handling 3D transformations, especially for sensors such as
+Lidar, Camera, IMU, and GNSS. It includes classes and functions to create, combine, and invert transformations,
+as well as to extract parameters like translation and rotation.
 
 Classes:
-    Transformation: Represents a 3D transformation with translation and rotation, providing methods to
-                    combine and invert transformations.
+    Transformation: Represents a 3D transformation consisting of translation and rotation, providing methods
+                    to combine and invert transformations.
 
 Functions:
     get_transformation: Creates a Transformation object for a given sensor (Camera, Lidar, IMU, GNSS).
+    transform_points_to_origin: Transforms LiDAR points to the origin of the associated agent.
 """
-from typing import Union
-from aeifdataset.data import Lidar, Camera, IMU, GNSS
+from typing import Union, Tuple
+from aeifdataset.data import Lidar, Camera, IMU, GNSS, LidarInformation
 from scipy.spatial.transform import Rotation as R
 import numpy as np
 
@@ -196,3 +197,34 @@ def get_transformation(sensor: Union[Camera, Lidar, IMU, GNSS]) -> Transformatio
 
     tf = Transformation(sensor_at, sensor_to, x, y, z, roll, pitch, yaw)
     return tf
+
+
+def transform_points_to_origin(data: Union[Lidar, Tuple[np.ndarray, LidarInformation]]) -> np.ndarray:
+    """Transforms LiDAR points to the origin of the associated agent.
+
+    This function takes either a LiDAR sensor object or a tuple containing LiDAR points
+    and corresponding LiDAR information. It applies the transformation matrix of the
+    associated agent (vehicle or tower) to convert the points into the coordinate frame
+    of that agent. For vehicles, this is represented by the top LiDAR, and for towers,
+    by the upper platform LiDAR.
+
+    Args:
+        data (Union[Lidar, Tuple[np.ndarray, LidarInformation]]): Either a LiDAR sensor object or a tuple containing
+            a NumPy array of LiDAR points and LidarInformation.
+
+    Returns:
+        np.ndarray: A NumPy array containing the transformed 3D points in the associated agent's coordinate frame.
+    """
+    if isinstance(data, Lidar):
+        points = data.points.points
+        points = np.stack((points['x'], points['y'], points['z'], np.ones((points['x'].shape[0]))))
+        lidar_info = data.info
+    else:
+        points, lidar_info = data
+        points = np.stack((points[:, 0], points[:, 1], points[:, 2], np.ones((points.shape[0]))))
+
+    # Get the transformation matrix and apply it
+    trans = get_transformation(Lidar(lidar_info))
+    transformed_points = trans.transformation_mtx @ points
+
+    return transformed_points.T[:, :3]
