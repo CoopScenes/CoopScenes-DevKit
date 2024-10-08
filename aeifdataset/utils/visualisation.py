@@ -67,46 +67,54 @@ def get_colored_stereo_image(camera_left: Camera, camera_right: Camera, cmap_nam
 
 
 def plot_points_on_image(image: PilImage, points: np.ndarray, points_3d: np.ndarray,
-                         cmap_name: str = "inferno_r", radius: float = 1.5,
+                         cmap_name: str = "Spectral", radius: float = 2.5,
                          static_color: Optional[Union[str, Tuple[int, int, int]]] = None,
-                         max_range: Optional[float] = None) -> PilImage:
-    """Plot 2D points on a camera image with optional color mapping.
+                         min_range: Optional[float] = 3,
+                         max_range: Optional[float] = 50, opacity: float = 0.5) -> PilImage:
+    """Plot 2D points on a camera image with optional color mapping, range limits, and opacity.
 
     This function plots a list of 2D points onto a camera image. If a static color is provided,
-    all points will be plotted in that color. Otherwise, the points will be dynamically colored
-    based on their range values using the specified colormap.
+    all points will be plotted in that color with the specified opacity. Otherwise, the points will be
+    dynamically colored based on their range values using the specified colormap. You can also set
+    minimum and maximum range values for color normalization. The opacity value controls the transparency of the points.
 
     Args:
         image (PilImage): The camera image onto which the points will be plotted.
         points (np.ndarray): The 2D coordinates of the points to plot.
         points_3d (np.ndarray): The corresponding 3D points used to calculate the range.
-        cmap_name (str): The name of the matplotlib colormap to use for color mapping. Defaults to "inferno_r".
-        radius (float): The radius of the points to plot. Defaults to 1.5.
+        cmap_name (str): The name of the matplotlib colormap to use for dynamic color mapping. Defaults to "Spectral".
+        radius (float): The radius of the points to plot. Defaults to 2.5.
         static_color (Optional[Union[str, Tuple[int, int, int]]]): A string representing a color name (e.g., "red")
             or an RGB tuple. If provided, this color is used for all points. Defaults to None.
-        max_range (Optional[float]): The maximum range value for normalization. If None, the maximum range will
-            be determined from the 3D points.
+        min_range (Optional[float]): The minimum range value for normalization. Defaults to 3.
+        max_range (Optional[float]): The maximum range value for normalization. Defaults to 50.
+        opacity (float): A value between 0 (completely transparent) and 1 (fully opaque) to control the transparency of the points. Defaults to 0.5.
 
     Returns:
         PilImage: The image with the points plotted on it.
     """
-    draw = ImageDraw.Draw(image)
+    if points.size == 0:
+        return image
+
+    draw = ImageDraw.Draw(image, "RGBA")
+
+    opacity = int(np.clip(opacity * 255, 0, 255))
 
     if static_color is not None:
         if isinstance(static_color, str):
             static_color = ImageColor.getrgb(static_color)
         for x, y in points:
-            draw.ellipse([(x - radius, y - radius), (x + radius, y + radius)], fill=static_color)
+            draw.ellipse([(x - radius, y - radius), (x + radius, y + radius)], fill=(*static_color, opacity))
     else:
         cmap = plt.get_cmap(cmap_name)
         ranges = np.linalg.norm(points_3d, axis=1)
-        val_min = np.min(ranges)
-        val_max = max_range if max_range is not None else np.max(ranges)
+        val_min = min_range
+        val_max = max_range
         norm_values = (ranges - val_min) / (val_max - val_min)
 
         for (x, y), value in zip(points, norm_values):
             rgba = cmap(value)
-            color = (int(rgba[0] * 255), int(rgba[1] * 255), int(rgba[2] * 255))
+            color = (int(rgba[0] * 255), int(rgba[1] * 255), int(rgba[2] * 255), opacity)
             draw.ellipse([(x - radius, y - radius), (x + radius, y + radius)], fill=color)
 
     return image
@@ -114,8 +122,9 @@ def plot_points_on_image(image: PilImage, points: np.ndarray, points_3d: np.ndar
 
 def get_projection_img(camera: Camera,
                        *lidars: Union[Lidar, Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]],
-                       cmap_name: str = "inferno_r", radius: float = 1.5,
-                       max_range: Optional[float] = None) -> PilImage:
+                       cmap_name: str = "Spectral", radius: float = 2.5,
+                       min_range: Optional[float] = 3, max_range: Optional[float] = 50,
+                       opacity: float = 0.5) -> PilImage:
     """Generate an image with LiDAR points projected onto it.
 
     This function projects LiDAR points onto a camera image and allows for optional
@@ -127,9 +136,11 @@ def get_projection_img(camera: Camera,
         *lidars (Union[Lidar, Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]]): One or more LiDAR sensors,
                  or tuples containing a LiDAR and an optional static color.
         cmap_name (str): The name of the colormap used for dynamic point coloring. Defaults to 'inferno_r'.
-        radius (float): The radius for plotting the LiDAR points on the image. Defaults to 1.5.
-        max_range (Optional[float]): The maximum range for color normalization. If None, the range will be automatically
-            determined based on the LiDAR data.
+        radius (float): The radius for plotting the LiDAR points on the image. Defaults to 2.5.
+        min_range (Optional[float]): The minimum range value for normalization. Defaults to 3.
+        max_range (Optional[float]): The maximum range value for normalization. Defaults to 50.
+        opacity (float): The opacity value for the plotted points, ranging from 0 (transparent) to 1 (opaque).
+                         Defaults to 0.5.
 
     Returns:
         PilImage: The image with the LiDAR points projected onto it.
@@ -148,7 +159,7 @@ def get_projection_img(camera: Camera,
     for lidar, static_color in lidar_list:
         pts, proj = get_projection(lidar, camera)
         proj_img = plot_points_on_image(proj_img, proj, pts, static_color=static_color, cmap_name=cmap_name,
-                                        radius=radius, max_range=max_range)
+                                        radius=radius, min_range=min_range, max_range=max_range, opacity=opacity)
 
     return proj_img
 
