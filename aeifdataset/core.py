@@ -10,7 +10,7 @@ Classes:
     Dataloader: Manages the loading of AMEISE-Record files from a specified directory. Provides access to these
                 records and allows for retrieval by index or filename.
 """
-from typing import List, Optional, Iterator
+from typing import List, Optional, Iterator, Union
 import os
 import glob
 from aeifdataset.data import *
@@ -60,23 +60,37 @@ class DataRecord:
         """Return the number of frames in the DataRecord."""
         return self.num_frames
 
-    def __getitem__(self, frame_index) -> Frame:
-        """Get a specific frame by its index.
+    def __getitem__(self, frame_index) -> Union[Frame, List[Frame]]:
+        """Get a specific frame or a range of frames by index or slice.
 
         Args:
-            frame_index (int): The index of the frame to retrieve.
+            frame_index (int or slice): The index or range of frames to retrieve.
 
         Returns:
-            Frame: The frame at the specified index.
+            Frame or List[Frame]: The frame at the specified index, or a list of frames if a slice is provided.
 
         Raises:
             ValueError: If the frame index is out of range.
         """
-        if frame_index < 0 or frame_index >= len(self.frame_lengths):
-            raise ValueError("Frame index out of range.")
-        start_pos = sum(self.frame_lengths[:frame_index])
-        end_pos = start_pos + self.frame_lengths[frame_index]
-        return Frame.from_bytes(self.frames_data[start_pos:end_pos])
+        if isinstance(frame_index, int):
+            if frame_index < 0 or frame_index >= len(self.frame_lengths):
+                raise ValueError("Frame index out of range.")
+            start_pos = sum(self.frame_lengths[:frame_index])
+            end_pos = start_pos + self.frame_lengths[frame_index]
+            return Frame.from_bytes(self.frames_data[start_pos:end_pos])
+
+        elif isinstance(frame_index, slice):
+            start, stop, step = frame_index.indices(len(self.frame_lengths))
+            frames = []
+            start_pos = sum(self.frame_lengths[:start])
+            for i in range(start, stop, step):
+                end_pos = start_pos + self.frame_lengths[i]
+                frames.append(Frame.from_bytes(self.frames_data[start_pos:end_pos]))
+                start_pos = end_pos
+            return frames
+
+        else:
+            raise TypeError("Frame index must be an integer or slice.")
 
     def __iter__(self) -> Iterator['Frame']:
         """Return an iterator over frames in the DataRecord.

@@ -1,29 +1,25 @@
 """
-This module provides functions for visualizing sensor data from autonomous vehicles, including disparity maps from stereo camera images,
-3D point clouds from LiDAR sensors, and projections of LiDAR points onto camera images. It also includes utilities for displaying
-the effects of correcting the extrinsic parameters of the camera, allowing users to visualize before-and-after corrections for roll, pitch, and yaw.
+This module provides functions for visualizing sensor data from autonomous vehicles, including depth maps from stereo camera images,
+3D point clouds from LiDAR sensors, and projections of LiDAR points onto camera images.
 
 Functions:
     get_colored_stereo_image(camera_left, camera_right, cmap_name, min_value, max_value):
         Computes and returns the depth map between two stereo camera images as a color-mapped image.
-    plot_points_on_image(image, points, points_3d, cmap_name, radius, static_color, max_range):
+    _plot_points_on_image(image, points, points_3d, cmap_name, radius, static_color, min_range, max_range, opacity):
         Plots 2D points on a camera image with optional color mapping based on range values or static color.
-    get_projection_img(camera, lidars, cmap_name, radius, max_range):
-        Generates an image with LiDAR points projected onto the camera image with optional colormap and radius settings.
+    get_projection_img(camera, *lidars, cmap_name, radius, min_range, max_range, opacity):
+        Generates an image with LiDAR points projected onto the camera image, with optional colormap, radius, and opacity settings.
     show_points(points, colors, point_size):
-        Displays the 3D point cloud from a LiDAR sensor or NumPy arrays of points using Open3D.
-    show_tf_correction(camera, lidar_with_color, roll_correction, pitch_correction, yaw_correction, max_range_factor):
-        Displays the effect of correcting the extrinsic parameters on the projection of LiDAR points onto a camera image, showing both raw and corrected projections side-by-side.
+        Displays the 3D point cloud from a LiDAR sensor or NumPy arrays of points using Open3D, with optional colors and adjustable point size.
 """
-from typing import Optional, Union, Tuple, List
+from typing import Optional, Union, Tuple
 from PIL import Image as PilImage, ImageDraw, ImageColor
 import importlib.util
 import numpy as np
 import matplotlib.pyplot as plt
 
 from aeifdataset.data import Lidar, Camera
-from aeifdataset.utils import get_projection
-from aeifdataset.utils.image_functions import get_disparity_map
+from aeifdataset.utils import get_projection, get_disparity_map
 
 
 def get_colored_stereo_image(camera_left: Camera, camera_right: Camera, cmap_name: str = "viridis",
@@ -69,8 +65,8 @@ def get_colored_stereo_image(camera_left: Camera, camera_right: Camera, cmap_nam
 def plot_points_on_image(image: PilImage, points: np.ndarray, points_3d: np.ndarray,
                          cmap_name: str = "Spectral", radius: float = 2.5,
                          static_color: Optional[Union[str, Tuple[int, int, int]]] = None,
-                         min_range: Optional[float] = 3,
-                         max_range: Optional[float] = 50, opacity: float = 0.5) -> PilImage:
+                         min_range: Optional[float] = 4,
+                         max_range: Optional[float] = 50, opacity: float = 0.6) -> PilImage:
     """Plot 2D points on a camera image with optional color mapping, range limits, and opacity.
 
     This function plots a list of 2D points onto a camera image. If a static color is provided,
@@ -123,8 +119,8 @@ def plot_points_on_image(image: PilImage, points: np.ndarray, points_3d: np.ndar
 def get_projection_img(camera: Camera,
                        *lidars: Union[Lidar, Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]],
                        cmap_name: str = "Spectral", radius: float = 2.5,
-                       min_range: Optional[float] = 5, max_range: Optional[float] = 50,
-                       opacity: float = 0.5) -> PilImage:
+                       min_range: Optional[float] = 4, max_range: Optional[float] = 50,
+                       opacity: float = 0.6) -> PilImage:
     """Generate an image with LiDAR points projected onto it.
 
     This function projects LiDAR points onto a camera image and allows for optional
@@ -211,50 +207,3 @@ def show_points(points: Union[Lidar, np.ndarray],
 
     vis.run()
     vis.destroy_window()
-
-
-def show_tf_correction(camera: Camera,
-                       lidar_with_color: Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]],
-                       roll_correction: float, pitch_correction: float, yaw_correction: float,
-                       max_range_factor: float = 0.5) -> None:
-    """Display the effect of correcting the extrinsic parameters on LiDAR projection.
-
-    This function visualizes the projection of LiDAR points onto a camera image before and after
-    applying a correction to the camera's extrinsic parameters. The user can specify corrections
-    to the roll, pitch, and yaw angles. The raw and corrected projections are displayed side-by-side.
-
-    Args:
-        camera (Camera): The camera whose extrinsic parameters will be adjusted.
-        lidar_with_color (Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]): A tuple containing the LiDAR sensor
-            and an optional static color for the points.
-        roll_correction (float): Correction to apply to the roll angle (in radians).
-        pitch_correction (float): Correction to apply to the pitch angle (in radians).
-        yaw_correction (float): Correction to apply to the yaw angle (in radians).
-        max_range_factor (float): A factor used to scale the maximum range of values for normalization. Defaults to 0.5.
-
-    Returns:
-        None
-    """
-    lidar, static_color = lidar_with_color
-
-    proj_img = get_projection_img(camera, [(lidar, static_color)], max_range_factor=max_range_factor)
-
-    original_rpy = np.array(camera.info.extrinsic.rpy)
-    camera.info.extrinsic.rpy = original_rpy + np.array([roll_correction, pitch_correction, yaw_correction])
-
-    proj_img_corrected = get_projection_img(camera, [(lidar, static_color)], max_range_factor=max_range_factor)
-    camera.info.extrinsic.rpy = original_rpy  # Restore original parameters
-
-    fig, axes = plt.subplots(1, 2, figsize=(40, 26))
-
-    axes[0].imshow(proj_img)
-    axes[0].set_title('Raw')
-    axes[0].axis('off')
-
-    axes[1].imshow(proj_img_corrected)
-    axes[1].set_title(f'Corrected [Roll: {roll_correction}, Pitch: {pitch_correction}, Yaw: {yaw_correction}]')
-    axes[1].axis('off')
-
-    print("Camera extrinsic parameters after correction:", camera.info.extrinsic)
-
-    plt.show()

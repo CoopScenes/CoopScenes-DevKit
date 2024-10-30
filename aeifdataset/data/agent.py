@@ -49,10 +49,10 @@ class VisionSensorsVeh:
         self.REAR: Optional[Camera] = None
 
     def __iter__(self):
-        """Make the object iteratable over its cameras."""
+        """Make the object iterable over its cameras, excluding 'STEREO_RIGHT'."""
         for name in self._CAMERA_NAMES:
             camera = getattr(self, name)
-            if camera is not None:
+            if camera is not None and name != 'STEREO_RIGHT':
                 yield name, camera
 
     def __len__(self):

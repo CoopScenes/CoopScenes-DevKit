@@ -9,3 +9,4 @@ exclude __pycache__/
 exclude tests
 exclude docs
 exclude aeifdataset/data/*.md
+exclude aeifdataset/develop

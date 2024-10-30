@@ -145,29 +145,37 @@ class ROI:
 
 
 class VehicleInformation(ReprFormaterMixin):
-    """Class representing metadata about a vehicle.
+    """Represents metadata about the vehicle.
+
+    For the vehicle, the TOP Lidar always represents the origin for the transformations.
+    This means all extrinsic poses are relative to the TOP Lidar.
 
     Attributes:
         model_name (Optional[str]): The model name of the vehicle.
-        extrinsic (Optional[Pose]): The extrinsic pose of the TOP Lidar relative to the UPPER_PLATFORM Lidar.
+        extrinsic (Optional[Pose]): The extrinsic pose of the UPPER_PLATFORM Lidar relative to the TOP Lidar.
+        height (Optional[Pose]): The height of the TOP Lidar above the ground.
     """
 
-    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
-        """Initialize a VehicleInformation object.
+    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None,
+                 height: Optional[Pose] = None):
+        """Initializes a VehicleInformation object.
 
         Args:
             model_name (Optional[str]): The model name of the vehicle.
-            extrinsic (Optional[Pose]): The extrinsic pose of the TOP Lidar relative to the UPPER_PLATFORM Lidar.
+            extrinsic (Optional[Pose]): The extrinsic pose of the UPPER_PLATFORM Lidar relative to the TOP Lidar.
+            height (Optional[Pose]): The height of the TOP Lidar above the ground.
         """
         self.model_name = model_name
         self.extrinsic = extrinsic
+        self.height = height
 
     def __repr__(self):
         """Return a string representation of the VehicleInformation object."""
         return (
             f"VehicleInformation(\n"
             f"    model_name={self.model_name},\n"
-            f"    extrinsic={self._format_object(self.extrinsic)}\n"
+            f"    extrinsic={self._format_object(self.extrinsic)},\n"
+            f"    height={self.height.xyz[2]:.1f}m"
             f")"
         )
 
@@ -177,29 +185,37 @@ class VehicleInformation(ReprFormaterMixin):
 
 
 class TowerInformation(ReprFormaterMixin):
-    """Class representing metadata about a sensor tower.
+    """Represents metadata about the sensor tower.
+
+    For the tower, the UPPER_PLATFORM Lidar always represents the origin for the transformations.
+    This means all extrinsic poses are relative to the UPPER_PLATFORM Lidar.
 
     Attributes:
         model_name (Optional[str]): The model name of the tower.
-        extrinsic (Optional[Pose]): The extrinsic pose of the UPPER_PLATFORM Lidar relative to the TOP Lidar.
+        extrinsic (Optional[Pose]): The extrinsic pose of the TOP Lidar relative to the UPPER_PLATFORM Lidar.
+        height (Optional[Pose]): The height of the UPPER_PLATFORM Lidar above the ground.
     """
 
-    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
-        """Initialize a TowerInformation object.
+    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None,
+                 height: Optional[Pose] = None):
+        """Initializes a TowerInformation object.
 
         Args:
             model_name (Optional[str]): The model name of the tower.
-            extrinsic (Optional[Pose]): The extrinsic pose of the UPPER_PLATFORM Lidar relative to the TOP Lidar.
+            extrinsic (Optional[Pose]): The extrinsic pose of the TOP Lidar relative to the UPPER_PLATFORM Lidar.
+            height (Optional[Pose]): The height of the UPPER_PLATFORM Lidar above the ground.
         """
         self.model_name = model_name
         self.extrinsic = extrinsic
+        self.height = height
 
     def __repr__(self):
-        """Return a string representation of the TowerInformation object."""
+        """Returns a string representation of the TowerInformation object."""
         return (
             f"TowerInformation(\n"
             f"    model_name={self.model_name},\n"
-            f"    extrinsic={self._format_object(self.extrinsic)}\n"
+            f"    extrinsic={self._format_object(self.extrinsic)},\n"
+            f"    height={self.height.xyz[2]:.1f}m"
             f")"
         )
 

@@ -157,8 +157,9 @@ def disparity_to_depth(disparity_map: np.ndarray, camera_info: Union[Camera, Cam
     focal_length = camera_info.camera_mtx[0][0]
     baseline = abs(camera_info.stereo_transform.translation[0])
 
-    # Calculate depth map with avoidance of division by zero (disparity == 0)
-    depth_map = np.where(disparity_map > 0, (focal_length * baseline) / disparity_map, np.inf)
+    # Calculate depth map, set depth to np.inf where disparity is zero
+    with np.errstate(divide='ignore'):  # Ignore divide by zero warnings
+        depth_map = np.where(disparity_map > 0, (focal_length * baseline) / disparity_map, np.inf)
 
     return depth_map
 
