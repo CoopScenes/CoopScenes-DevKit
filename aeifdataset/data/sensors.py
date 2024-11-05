@@ -86,7 +86,7 @@ class Camera:
         instance = cls()
         info_bytes, data = read_data_block(data)
         setattr(instance, 'info', obj_from_bytes(info_bytes))
-        image, _ = deserialize(data, Image, instance.info.shape)
+        image, _ = deserialize(data, Image)
         setattr(instance, '_image_raw', image)
         return instance
 

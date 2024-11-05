@@ -20,6 +20,7 @@ from decimal import Decimal
 from PIL import Image as PilImage
 from aeifdataset.miscellaneous import read_data_block, TimestampMixin, ReprFormaterMixin
 import numpy as np
+from io import BytesIO
 
 
 class Velocity(TimestampMixin, ReprFormaterMixin):
@@ -257,33 +258,38 @@ class Image(TimestampMixin):
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
 
     def to_bytes(self) -> bytes:
-        """Serialize the image to bytes.
-
+        """Serialize the image to bytes using PNG compression.
         Returns:
-            bytes: Serialized byte representation of the image and timestamp.
+            bytes: Serialized byte representation of the compressed image and timestamp.
         """
-        encoded_img = self.image.tobytes()
+        img_byte_arr = BytesIO()
+        self.image.save(img_byte_arr, format='PNG')
+        encoded_img = img_byte_arr.getvalue()
+
         encoded_ts = str(self.timestamp).encode('utf-8')
         img_len = len(encoded_img).to_bytes(4, 'big')
         ts_len = len(encoded_ts).to_bytes(4, 'big')
+
         return img_len + encoded_img + ts_len + encoded_ts
 
     @classmethod
-    def from_bytes(cls, data: bytes, shape: Tuple[int, int]) -> 'Image':
-        """Deserialize bytes to create an Image object.
-
+    def from_bytes(cls, data: bytes) -> 'Image':
+        """Deserialize bytes to create an Image object from PNG or JPEG-compressed data.
         Args:
             data (bytes): The serialized byte data to deserialize.
-            shape (Tuple[int, int]): The dimensions of the image (width, height).
 
         Returns:
             Image: The deserialized Image object.
         """
         img_bytes, data = read_data_block(data)
         ts_bytes, _ = read_data_block(data)
+
         img_instance = cls()
         img_instance.timestamp = Decimal(ts_bytes.decode('utf-8'))
-        img_instance.image = PilImage.frombytes("RGB", shape, img_bytes)
+
+        img_stream = BytesIO(img_bytes)
+        img_instance.image = PilImage.open(img_stream)
+
         return img_instance
 
 

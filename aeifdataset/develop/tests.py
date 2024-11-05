@@ -3,6 +3,7 @@ import aeifdataset as ad
 from aeifdataset import DataRecord
 from aeifdataset.develop import show_tf_correction
 from tqdm import tqdm
+import numpy as np
 
 
 # Funktion, die in jedem Prozess ausgeführt wird
@@ -26,16 +27,26 @@ def save_dataset_images_multithreaded(dataset, save_dir):
         pool.join()
 
 
+def filter_points(points, x_range, y_range, z_range):
+    x_min, x_max = x_range
+    y_min, y_max = y_range
+    z_min, z_max = z_range
+    mask = (points['x'] < x_min) | (points['x'] > x_max) | \
+           (points['y'] < y_min) | (points['y'] > y_max) | \
+           (points['z'] < z_min) | (points['z'] > z_max)
+    return points[mask]
+
+
 if __name__ == '__main__':
     save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
-    dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_3_bushaltestelle")
+    dataset = ad.Dataloader("/mnt/hot_data/test")
 
-    # frame = dataset[22][0]
-    frames = DataRecord('/mnt/hot_data/dataset/seq_3_bushaltestelle/incomplete_frames.4mse')
-    frame = frames[400:430]
+    frame = dataset[0][0]
 
     image = frame.tower.cameras.VIEW_1
     points = frame.tower.lidars.VIEW_1
 
+    ad.show_points(points)
+
     # ad.show_tf_correction(image, points, -0.003, -0.01, -0.004)
-    ad.get_projection_img(image, points).show()
+    # ad.get_projection_img(image, points).show()

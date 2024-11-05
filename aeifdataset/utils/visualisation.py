@@ -187,6 +187,8 @@ def show_points(points: Union[Lidar, np.ndarray],
     import open3d as o3d
     if isinstance(points, Lidar):
         points = np.stack((points.points['x'], points.points['y'], points.points['z']), axis=-1).astype(np.float64)
+    elif points.dtype.names:
+        points = np.stack((points['x'], points['y'], points['z']), axis=-1).astype(np.float64)
 
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(points)

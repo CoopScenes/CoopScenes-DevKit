@@ -528,24 +528,14 @@ class LidarInformation(ReprFormaterMixin):
     def _os_dtype_structure() -> Dict[str, List]:
         """Return the dtype structure for 'OS' (Ouster) Lidar models."""
         return {
-            'names': [
-                'x', 'y', 'z', 'intensity', 't',
-                'reflectivity', 'ring', 'ambient', 'range'
-            ],
-            'formats': [
-                '<f4', '<f4', '<f4', '<f4', '<u4',
-                '<u2', '<u2', '<u2', '<u4'
-            ],
-            'offsets': [0, 4, 8, 16, 20, 24, 26, 28, 32],
-            'itemsize': 48
+            'names': ['x', 'y', 'z', 'intensity', 't', 'reflectivity', 'ring', 'ambient'],
+            'formats': ['<f4', '<f4', '<f4', '<f4', '<u4', '<u2', '<u2', '<u2']
         }
 
     @staticmethod
     def _blickfeld_dtype_structure() -> Dict[str, List]:
         """Return the dtype structure for 'Blickfeld' Lidar models."""
         return {
-            'names': ['x', 'y', 'z', 'range', 'intensity', 'point_id', 'point_time_offset'],
-            'formats': ['<f4', '<f4', '<f4', '<f4', '<u4', '<u4', '<u4'],
-            'offsets': [0, 4, 8, 12, 16, 20, 24],
-            'itemsize': 28  # The total size (in bytes) of the structure
+            'names': ['x', 'y', 'z', 'intensity', 'point_time_offset'],
+            'formats': ['<f4', '<f4', '<f4', '<u4', '<u4']
         }
