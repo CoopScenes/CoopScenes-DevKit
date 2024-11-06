@@ -263,7 +263,7 @@ class Image(TimestampMixin):
             bytes: Serialized byte representation of the compressed image and timestamp.
         """
         img_byte_arr = BytesIO()
-        self.image.save(img_byte_arr, format='PNG')
+        self.image.save(img_byte_arr, format='JPEG', quality=85)
         encoded_img = img_byte_arr.getvalue()
 
         encoded_ts = str(self.timestamp).encode('utf-8')

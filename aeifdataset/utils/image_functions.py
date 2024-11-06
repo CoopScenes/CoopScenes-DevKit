@@ -183,7 +183,7 @@ def save_image(image: Image, output_path: str, suffix: str = '', metadata: Optio
         for key, value in info_dict.items():
             info.add_text(key, value)
 
-    image.save(output_file, 'PNG', pnginfo=info, compress_level=0)
+    image.save(output_file, 'PNG', pnginfo=info)
 
 
 def save_all_images_in_frame(frame, output_path: str, create_subdir: bool = False, use_raw: bool = False):

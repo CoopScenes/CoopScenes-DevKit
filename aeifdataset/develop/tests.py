@@ -39,14 +39,18 @@ def filter_points(points, x_range, y_range, z_range):
 
 if __name__ == '__main__':
     save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
-    dataset = ad.Dataloader("/mnt/hot_data/test")
+    dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_3_bushaltestelle")
 
-    frame = dataset[0][0]
+    frame = dataset[3][0]
 
     image = frame.tower.cameras.VIEW_1
-    points = frame.tower.lidars.VIEW_1
+    points = frame.tower.lidars.UPPER_PLATFORM
 
-    ad.show_points(points)
+    image2 = frame.tower.cameras.VIEW_2
+
+    # ad.save_image(image, '/mnt/hot_data/samples', '_png')
+    # ad.show_points(points)
 
     # ad.show_tf_correction(image, points, -0.003, -0.01, -0.004)
     # ad.get_projection_img(image, points).show()
+    ad.get_projection_img(image2, points).show()
