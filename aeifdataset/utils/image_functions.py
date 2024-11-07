@@ -15,6 +15,7 @@ from typing import Optional, Tuple, Union
 import os
 from PIL import Image as PilImage
 from PIL.PngImagePlugin import PngInfo
+from io import BytesIO
 from aeifdataset.data import CameraInformation, Camera, Image
 import numpy as np
 import cv2
@@ -164,26 +165,31 @@ def disparity_to_depth(disparity_map: np.ndarray, camera_info: Union[Camera, Cam
     return depth_map
 
 
-def save_image(image: Image, output_path: str, suffix: str = '', metadata: Optional[CameraInformation] = None):
-    """Save an image to disk with optional metadata.
+def save_image(image: Image, output_path: str, suffix: str = '', format: str = 'PNG'):
+    """Save an image to disk in JPEG or PNG format.
 
-    Saves an `Image` object to disk in PNG format. Optionally, metadata can be embedded into the image file.
+    Saves an `Image` object to disk in the specified format (JPEG or PNG).
+    No additional compression is applied to JPEG images.
 
     Args:
         image (Image): The image to be saved.
         output_path (str): The directory where the image will be saved.
         suffix (str, optional): Optional suffix to be added to the image filename. Defaults to ''.
-        metadata (Optional[CameraInformation], optional): Metadata to embed in the image file. Defaults to None.
+        format (str, optional): Format in which to save the image ('JPEG' or 'PNG'). Defaults to 'PNG'.
     """
-    output_file = os.path.join(output_path, f'{image.get_timestamp()}{suffix}.png')
+    # Set the file extension based on format
+    ext = 'jpg' if format.upper() == 'JPEG' else 'png'
+    output_file = os.path.join(output_path, f'{image.get_timestamp()}{suffix}.{ext}')
 
-    info = PngInfo()
-    if metadata:
-        info_dict = metadata.to_dict()
-        for key, value in info_dict.items():
-            info.add_text(key, value)
-
-    image.save(output_file, 'PNG', pnginfo=info)
+    # Save as JPEG or PNG based on format
+    if format.upper() == 'JPEG':
+        # Save as JPEG directly
+        image.save(output_file, 'JPEG')
+    elif format.upper() == 'PNG':
+        # Save as PNG
+        image.save(output_file, 'PNG')
+    else:
+        raise ValueError("Unsupported format. Please use 'JPEG' or 'PNG'.")
 
 
 def save_all_images_in_frame(frame, output_path: str, create_subdir: bool = False, use_raw: bool = False):
@@ -211,10 +217,10 @@ def save_all_images_in_frame(frame, output_path: str, create_subdir: bool = Fals
                 camera_dir = os.path.join(output_path, camera_name.lower())
                 os.makedirs(camera_dir, exist_ok=True)
                 save_path = camera_dir
-                save_image(image_to_save, save_path, '', camera.info)
+                save_image(image_to_save, save_path, '')
             else:
                 save_path = output_path
-                save_image(image_to_save, save_path, f"_{camera_name.lower()}", camera.info)
+                save_image(image_to_save, save_path, f"_{camera_name.lower()}")
 
 
 def load_image_with_metadata(file_path: str) -> Tuple[PilImage.Image, dict]:

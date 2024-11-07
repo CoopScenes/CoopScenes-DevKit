@@ -15,7 +15,7 @@ Classes:
 Each class provides methods for initializing, serializing, and deserializing their respective
 data types, as well as utility functions like converting timestamps to human-readable formats.
 """
-from typing import Tuple, Optional, Dict
+from typing import Optional, Dict
 from decimal import Decimal
 from PIL import Image as PilImage
 from aeifdataset.miscellaneous import read_data_block, TimestampMixin, ReprFormaterMixin

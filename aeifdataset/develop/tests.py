@@ -48,9 +48,9 @@ if __name__ == '__main__':
 
     image2 = frame.tower.cameras.VIEW_2
 
-    # ad.save_image(image, '/mnt/hot_data/samples', '_png')
+    ad.save_image(image, '/mnt/hot_data/samples')
     # ad.show_points(points)
 
     # ad.show_tf_correction(image, points, -0.003, -0.01, -0.004)
     # ad.get_projection_img(image, points).show()
-    ad.get_projection_img(image2, points).show()
+    # ad.get_projection_img(image2, points).show()
