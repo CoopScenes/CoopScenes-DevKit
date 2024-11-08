@@ -4,4 +4,5 @@ dill
 scipy
 opencv-python
 matplotlib
+zstandard
 # open3d
