@@ -165,40 +165,47 @@ def disparity_to_depth(disparity_map: np.ndarray, camera_info: Union[Camera, Cam
     return depth_map
 
 
-def save_image(image: Image, output_path: str, suffix: str = '', format: str = 'PNG'):
+def save_image(image: Union[Image, PilImage], output_path: str, suffix: str = '', format: str = 'PNG'):
     """Save an image to disk in JPEG or PNG format.
 
-    Saves an `Image` object to disk in the specified format (JPEG or PNG).
-    No additional compression is applied to JPEG images.
+    This function saves an `Image` or `PilImage` object to disk in the specified format (JPEG or PNG).
+    If the input is an `Image` object, it accesses the underlying `PilImage` for saving.
 
     Args:
-        image (Image): The image to be saved.
+        image (Union[Image, PilImage]): The image to be saved. If an `Image` object is provided,
+                                        the function uses its internal `PilImage` representation.
         output_path (str): The directory where the image will be saved.
         suffix (str, optional): Optional suffix to be added to the image filename. Defaults to ''.
         format (str, optional): Format in which to save the image ('JPEG' or 'PNG'). Defaults to 'PNG'.
+
+    Raises:
+        ValueError: If an unsupported format is specified.
     """
-    # Set the file extension based on format
+
+    # Access the PilImage object if `image` is an instance of `Image`
+    if isinstance(image, Image):
+        image = image.image  # Assuming `image.image` contains the PilImage
+
     ext = 'jpg' if format.upper() == 'JPEG' else 'png'
     output_file = os.path.join(output_path, f'{image.get_timestamp()}{suffix}.{ext}')
 
-    # Save as JPEG or PNG based on format
     if format.upper() == 'JPEG':
-        # Save as JPEG directly
         image.save(output_file, 'JPEG')
     elif format.upper() == 'PNG':
-        # Save as PNG
         image.save(output_file, 'PNG')
     else:
         raise ValueError("Unsupported format. Please use 'JPEG' or 'PNG'.")
 
 
-def save_all_images_in_frame(frame, output_path: str, create_subdir: bool = False, use_raw: bool = False):
+def save_all_images_in_frame(frame, output_path: str, create_subdir: bool = False, use_raw: bool = False,
+                             format: str = 'PNG'):
     """Save all images from a frame's vehicle and tower cameras.
 
     Iterates through all cameras in the frame, saving each camera's image.
     If `create_subdir` is True, a subdirectory for each camera will be created.
-    If `use_raw` is True, the raw image (`camera._image_raw`) will be saved, otherwise
-    the processed image (`camera.image`) will be used.
+    If `use_raw` is True, the raw image (`camera._image_raw`) will be saved; otherwise,
+    the processed image (`camera.image`) will be used. The format of the saved images
+    can be specified as either 'JPEG' or 'PNG'.
 
     Args:
         frame: The frame object containing vehicle and tower cameras.
@@ -206,6 +213,10 @@ def save_all_images_in_frame(frame, output_path: str, create_subdir: bool = Fals
         create_subdir (bool, optional): If True, creates a subdirectory for each camera. Defaults to False.
         use_raw (bool, optional): If True, saves the raw image (`camera._image_raw`), otherwise saves the processed image.
                                   Defaults to False.
+        format (str, optional): The format in which to save the images ('JPEG' or 'PNG'). Defaults to 'PNG'.
+
+    Raises:
+        ValueError: If an unsupported format is specified.
     """
     os.makedirs(output_path, exist_ok=True)
     for agent in frame:
@@ -217,10 +228,10 @@ def save_all_images_in_frame(frame, output_path: str, create_subdir: bool = Fals
                 camera_dir = os.path.join(output_path, camera_name.lower())
                 os.makedirs(camera_dir, exist_ok=True)
                 save_path = camera_dir
-                save_image(image_to_save, save_path, '')
+                save_image(image_to_save, save_path, suffix='', format=format)
             else:
                 save_path = output_path
-                save_image(image_to_save, save_path, f"_{camera_name.lower()}")
+                save_image(image_to_save, save_path, suffix=f"_{camera_name.lower()}", format=format)
 
 
 def load_image_with_metadata(file_path: str) -> Tuple[PilImage.Image, dict]:

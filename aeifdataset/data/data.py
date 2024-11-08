@@ -21,6 +21,7 @@ from PIL import Image as PilImage
 from aeifdataset.miscellaneous import read_data_block, TimestampMixin, ReprFormaterMixin
 import numpy as np
 from io import BytesIO
+import zstandard as zstd
 
 
 class Velocity(TimestampMixin, ReprFormaterMixin):
@@ -348,10 +349,13 @@ class Points(TimestampMixin):
             bytes: Serialized byte representation of the points and timestamp.
         """
         encoded_pts = self.points.tobytes()
+        compressor = zstd.ZstdCompressor(level=22)
+        compressed_pts = compressor.compress(encoded_pts)
+
         encoded_ts = str(self.timestamp).encode('utf-8')
-        pts_len = len(encoded_pts).to_bytes(4, 'big')
+        pts_len = len(compressed_pts).to_bytes(4, 'big')
         ts_len = len(encoded_ts).to_bytes(4, 'big')
-        return pts_len + encoded_pts + ts_len + encoded_ts
+        return pts_len + compressed_pts + ts_len + encoded_ts
 
     @classmethod
     def from_bytes(cls, data: bytes, dtype: np.dtype) -> 'Points':
@@ -365,8 +369,11 @@ class Points(TimestampMixin):
             Points: The deserialized Points object.
         """
         pts_bytes, data = read_data_block(data)
+        decompressor = zstd.ZstdDecompressor()
+        pts_bytes_uncompressed = decompressor.decompress(pts_bytes)
         ts_bytes, _ = read_data_block(data)
         pts_instance = cls()
         pts_instance.timestamp = Decimal(ts_bytes.decode('utf-8'))
-        pts_instance.points = np.frombuffer(pts_bytes, dtype=dtype)
+
+        pts_instance.points = np.frombuffer(pts_bytes_uncompressed, dtype=dtype)
         return pts_instance
