@@ -39,14 +39,30 @@ def filter_points(points, x_range, y_range, z_range):
 
 if __name__ == '__main__':
     save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
-    dataset = ad.Dataloader("/mnt/hot_data/temp/seq_1_maille")
+    dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_1_maille")
 
     frame = dataset[0][0]
+    frame = DataRecord('/mnt/hot_data/dataset/seq_1_maille/id02315_2024-09-27_10-44-30.4mse')[90]
+    print(np.linalg.norm(frame.vehicle.DYNAMICS.velocity[0].linear_velocity) * 3.6)
+    '''
+    for datarecord in dataset:
+        for frame in datarecord:
+            speed = np.linalg.norm(frame.vehicle.DYNAMICS.velocity[0].linear_velocity) * 3.6
+            if speed < 1:
+                print(f'Datarecord: {datarecord.name}, Frame: {frame.frame_id}')
+    '''
 
-    image = frame.tower.cameras.VIEW_1
-    points = frame.tower.lidars.UPPER_PLATFORM
+    # image = frame.vehicle.cameras.STEREO_LEFT
 
-    image2 = frame.tower.cameras.VIEW_2
+    points_left = frame.vehicle.lidars.LEFT
+    points_top = frame.vehicle.lidars.TOP
+    points_right = frame.vehicle.lidars.RIGHT
+
+    ad.show_points(
+        (points_left, (255, 0, 0)),
+        (points_top, (0, 255, 0)),
+        (points_right, (0, 0, 255)),
+    )
 
     # ad.save_image(image, '/mnt/hot_data/samples')
     # ad.show_points(points)

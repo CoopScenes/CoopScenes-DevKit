@@ -19,7 +19,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from aeifdataset.data import Lidar, Camera
-from aeifdataset.utils import get_projection, get_disparity_map
+from aeifdataset.utils import get_projection, get_disparity_map, transform_points_to_origin
 
 
 def get_colored_stereo_image(camera_left: Camera, camera_right: Camera, cmap_name: str = "viridis",
@@ -160,23 +160,24 @@ def get_projection_img(camera: Camera,
     return proj_img
 
 
-def show_points(points: Union[Lidar, np.ndarray],
-                colors: Optional[np.ndarray] = None,
-                point_size: Optional[float] = None) -> None:
-    """Display the 3D point cloud from a LiDAR sensor or NumPy arrays of points and colors.
+def show_points(*lidars: Union[
+    np.ndarray, Lidar, Tuple[Union[np.ndarray, Lidar], Optional[Union[Tuple[int, int, int], np.ndarray]]]],
+                point_size: Optional[float] = 3) -> None:
+    """Display the 3D point cloud from multiple LiDAR sensors or point arrays with optional colors.
 
-    This function visualizes the 3D point cloud data from a LiDAR sensor or NumPy arrays
-    using Open3D for 3D visualization. If colors are provided, they will be applied to the
-    points in the visualization. The point size can also be adjusted.
+    This function visualizes the 3D point cloud data from multiple LiDAR sensors or `np.ndarray` arrays
+    representing point clouds, each transformed into the LiDAR's coordinate frame. Each can have an optional
+    color, either as a static RGB tuple or an `np.ndarray` specifying colors for each point.
 
     Args:
-        points (Union[Lidar, np.ndarray]): The LiDAR sensor or a NumPy array containing the 3D point cloud data.
-        colors (Optional[np.ndarray]): An optional NumPy array containing RGB colors for each point.
-        point_size (float): The size of the points in the visualization. Defaults to 8.0 if colors are provided,
-                            otherwise 1.0.
+        *lidars (Union[np.ndarray, Lidar, Tuple[Union[np.ndarray, Lidar], Optional[Union[Tuple[int, int, int], np.ndarray]]]]):
+            One or more LiDAR sensors or point arrays, optionally paired with an RGB color tuple or an array of colors.
+        point_size (float, optional): The size of the points in the visualization. Defaults to 8.0 if colors are provided,
+                                      otherwise 1.0.
 
     Raises:
         ImportError: If Open3D is not installed.
+        ValueError: If the provided color array does not match the number of points.
 
     Returns:
         None
@@ -185,25 +186,59 @@ def show_points(points: Union[Lidar, np.ndarray],
         raise ImportError('Install open3d to use this function with: python -m pip install open3d')
 
     import open3d as o3d
-    if isinstance(points, Lidar):
-        points = np.stack((points.points['x'], points.points['y'], points.points['z']), axis=-1).astype(np.float64)
-    elif points.dtype.names:
-        points = np.stack((points['x'], points['y'], points['z']), axis=-1).astype(np.float64)
 
+    all_points = []
+    all_colors = []
+
+    for lidar_data in lidars:
+        # Check if lidar_data is a tuple with an optional color
+        if isinstance(lidar_data, tuple):
+            lidar_or_points, color = lidar_data
+        else:
+            lidar_or_points = lidar_data
+            color = None
+
+        # Extract points and transform them
+        if isinstance(lidar_or_points, Lidar):
+            points = transform_points_to_origin(lidar_or_points)  # Transform points for Lidar object
+        elif isinstance(lidar_or_points, np.ndarray) and lidar_or_points.shape[1] == 3:  # Assuming it's a (n, 3) array
+            points = transform_points_to_origin(lidar_or_points)  # Transform raw np.ndarray points
+        else:
+            raise ValueError(
+                "Each entry must be a Lidar object, a (n, 3) ndarray, or a tuple of either with an optional color.")
+
+        all_points.append(points)
+
+        # Process color: It can be an RGB tuple, an array of colors, or None
+        if color is not None:
+            if isinstance(color, tuple) and len(color) == 3:
+                # Normalize the RGB color to [0, 1] range and apply to all points
+                static_color = np.tile(np.array(color) / 255.0, (points.shape[0], 1))
+                all_colors.append(static_color)
+            elif isinstance(color, np.ndarray) and color.shape == points.shape:
+                # Use the provided color array as is
+                all_colors.append(color / 255.0 if color.max() > 1 else color)
+            else:
+                raise ValueError(
+                    "Color must be an RGB tuple, an (n, 3) color array matching the number of points, or None.")
+        else:
+            # Default gray color if no specific color is provided
+            all_colors.append(np.ones((points.shape[0], 3)) * 0.5)
+
+    # Combine all points and colors
+    all_points = np.vstack(all_points)
+    all_colors = np.vstack(all_colors)
+
+    # Create Open3D point cloud object
     pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(points)
+    pcd.points = o3d.utility.Vector3dVector(all_points)
+    pcd.colors = o3d.utility.Vector3dVector(all_colors)
 
-    if point_size is None:
-        point_size = 8.0 if colors is not None else 1.0
-
-    if colors is not None:
-        pcd.colors = o3d.utility.Vector3dVector(colors)
-
+    # Visualize
     vis = o3d.visualization.Visualizer()
     vis.create_window()
     vis.add_geometry(pcd)
 
-    # Adjust the point size
     render_option = vis.get_render_option()
     render_option.point_size = point_size
 

@@ -14,8 +14,6 @@ Functions:
 from typing import Optional, Tuple, Union
 import os
 from PIL import Image as PilImage
-from PIL.PngImagePlugin import PngInfo
-from io import BytesIO
 from aeifdataset.data import CameraInformation, Camera, Image
 import numpy as np
 import cv2
@@ -165,7 +163,7 @@ def disparity_to_depth(disparity_map: np.ndarray, camera_info: Union[Camera, Cam
     return depth_map
 
 
-def save_image(image: Union[Image, PilImage], output_path: str, suffix: str = '', format: str = 'PNG'):
+def save_image(image: Union[Image, PilImage.Image], output_path: str, suffix: str = '', format: str = 'PNG'):
     """Save an image to disk in JPEG or PNG format.
 
     This function saves an `Image` or `PilImage` object to disk in the specified format (JPEG or PNG).

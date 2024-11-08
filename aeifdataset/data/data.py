@@ -369,8 +369,10 @@ class Points(TimestampMixin):
             Points: The deserialized Points object.
         """
         pts_bytes, data = read_data_block(data)
+        
         decompressor = zstd.ZstdDecompressor()
         pts_bytes_uncompressed = decompressor.decompress(pts_bytes)
+
         ts_bytes, _ = read_data_block(data)
         pts_instance = cls()
         pts_instance.timestamp = Decimal(ts_bytes.decode('utf-8'))
