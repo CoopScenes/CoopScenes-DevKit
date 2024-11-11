@@ -142,7 +142,7 @@ class Dataloader:
             data_dir (str): The directory containing .4mse record files.
         """
         self.data_dir: str = os.path.join(data_dir)
-        self.record_map: List[str] = glob.glob(os.path.join(self.data_dir, '*.4mse'))
+        self.record_map: List[str] = sorted(glob.glob(os.path.join(self.data_dir, '*.4mse')))
 
     def __len__(self):
         """Return the number of records found in the directory."""

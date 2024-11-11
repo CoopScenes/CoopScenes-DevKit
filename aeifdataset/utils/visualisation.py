@@ -5,12 +5,12 @@ This module provides functions for visualizing sensor data from autonomous vehic
 Functions:
     get_colored_stereo_image(camera_left, camera_right, cmap_name, min_value, max_value):
         Computes and returns the depth map between two stereo camera images as a color-mapped image.
-    _plot_points_on_image(image, points, points_3d, cmap_name, radius, static_color, min_range, max_range, opacity):
+    plot_points_on_image(image, points, points_3d, cmap_name, radius, static_color, min_range, max_range, opacity):
         Plots 2D points on a camera image with optional color mapping based on range values or static color.
     get_projection_img(camera, *lidars, cmap_name, radius, min_range, max_range, opacity):
         Generates an image with LiDAR points projected onto the camera image, with optional colormap, radius, and opacity settings.
-    show_points(points, colors, point_size):
-        Displays the 3D point cloud from a LiDAR sensor or NumPy arrays of points using Open3D, with optional colors and adjustable point size.
+    show_points(*lidars, point_size, cmap_name, min_range, max_range):
+        Displays 3D point clouds from multiple LiDAR sensors or NumPy arrays with customizable colors and point size.
 """
 from typing import Optional, Union, Tuple
 from PIL import Image as PilImage, ImageDraw, ImageColor
@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 
 from aeifdataset.data import Lidar, Camera
 from aeifdataset.utils import get_projection, get_disparity_map, transform_points_to_origin
+from build.lib.aeifdataset import LidarInformation, Pose
 
 
 def get_colored_stereo_image(camera_left: Camera, camera_right: Camera, cmap_name: str = "viridis",
@@ -162,18 +163,17 @@ def get_projection_img(camera: Camera,
 
 def show_points(*lidars: Union[
     np.ndarray, Lidar, Tuple[Union[np.ndarray, Lidar], Optional[Union[Tuple[int, int, int], np.ndarray]]]],
-                point_size: Optional[float] = 3) -> None:
+                point_size: Optional[float] = 3, cmap_name: str = "Spectral", min_range: float = 4,
+                max_range: float = 50) -> None:
     """Display the 3D point cloud from multiple LiDAR sensors or point arrays with optional colors.
-
-    This function visualizes the 3D point cloud data from multiple LiDAR sensors or `np.ndarray` arrays
-    representing point clouds, each transformed into the LiDAR's coordinate frame. Each can have an optional
-    color, either as a static RGB tuple or an `np.ndarray` specifying colors for each point.
 
     Args:
         *lidars (Union[np.ndarray, Lidar, Tuple[Union[np.ndarray, Lidar], Optional[Union[Tuple[int, int, int], np.ndarray]]]]):
             One or more LiDAR sensors or point arrays, optionally paired with an RGB color tuple or an array of colors.
-        point_size (float, optional): The size of the points in the visualization. Defaults to 8.0 if colors are provided,
-                                      otherwise 1.0.
+        point_size (float, optional): The size of the points in the visualization.
+        cmap_name (str, optional): The name of the colormap to use for range-based coloring.
+        min_range (float, optional): The minimum range value for color normalization. Defaults to 4.
+        max_range (float, optional): The maximum range value for color normalization. Defaults to 50.
 
     Raises:
         ImportError: If Open3D is not installed.
@@ -190,6 +190,8 @@ def show_points(*lidars: Union[
     all_points = []
     all_colors = []
 
+    cmap = plt.get_cmap(cmap_name)  # Load colormap for range-based coloring
+
     for lidar_data in lidars:
         # Check if lidar_data is a tuple with an optional color
         if isinstance(lidar_data, tuple):
@@ -202,28 +204,32 @@ def show_points(*lidars: Union[
         if isinstance(lidar_or_points, Lidar):
             points = transform_points_to_origin(lidar_or_points)  # Transform points for Lidar object
         elif isinstance(lidar_or_points, np.ndarray) and lidar_or_points.shape[1] == 3:  # Assuming it's a (n, 3) array
-            points = transform_points_to_origin(lidar_or_points)  # Transform raw np.ndarray points
+            points = transform_points_to_origin(
+                (lidar_or_points, LidarInformation(name='',
+                                                   extrinsic=Pose(np.array([0, 0, 0]), np.array(
+                                                       [0, 0, 0])))))  # Transform raw np.ndarray points
         else:
             raise ValueError(
                 "Each entry must be a Lidar object, a (n, 3) ndarray, or a tuple of either with an optional color.")
 
         all_points.append(points)
 
-        # Process color: It can be an RGB tuple, an array of colors, or None
-        if color is not None:
-            if isinstance(color, tuple) and len(color) == 3:
-                # Normalize the RGB color to [0, 1] range and apply to all points
-                static_color = np.tile(np.array(color) / 255.0, (points.shape[0], 1))
-                all_colors.append(static_color)
-            elif isinstance(color, np.ndarray) and color.shape == points.shape:
-                # Use the provided color array as is
-                all_colors.append(color / 255.0 if color.max() > 1 else color)
-            else:
-                raise ValueError(
-                    "Color must be an RGB tuple, an (n, 3) color array matching the number of points, or None.")
+        # Color based on range with colormap if no static color is provided
+        if color is None:
+            ranges = np.linalg.norm(points, axis=1)
+            norm_values = (ranges - min_range) / (max_range - min_range)
+            norm_values = np.clip(norm_values, 0, 1)  # Ensure values are between 0 and 1
+            colors = cmap(norm_values)[:, :3]  # Apply colormap and ignore alpha channel
+            all_colors.append(colors)
+        elif isinstance(color, tuple) and len(color) == 3:
+            # Normalize the RGB color to [0, 1] range and apply to all points
+            static_color = np.tile(np.array(color) / 255.0, (points.shape[0], 1))
+            all_colors.append(static_color)
+        elif isinstance(color, np.ndarray) and color.shape == points.shape:
+            all_colors.append(color / 255.0 if color.max() > 1 else color)
         else:
-            # Default gray color if no specific color is provided
-            all_colors.append(np.ones((points.shape[0], 3)) * 0.5)
+            raise ValueError(
+                "Color must be an RGB tuple, an (n, 3) color array matching the number of points, or None.")
 
     # Combine all points and colors
     all_points = np.vstack(all_points)
