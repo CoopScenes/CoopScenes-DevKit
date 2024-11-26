@@ -10,7 +10,7 @@ Classes:
     Dataloader: Manages the loading of AMEISE-Record files from a specified directory. Provides access to these
                 records and allows for retrieval by index or filename.
 """
-from typing import List, Optional, Iterator, Union
+from typing import List, Optional, Iterator, Union, Generator
 import os
 import glob
 from aeifdataset.data import *
@@ -148,16 +148,23 @@ class Dataloader:
         """Return the number of records found in the directory."""
         return len(self.record_map)
 
-    def __getitem__(self, item) -> 'DataRecord':
-        """Get a specific DataRecord by index.
+    def __getitem__(self, item: Union[int, slice]) -> Union['DataRecord', Generator['DataRecord', None, None]]:
+        """Get a specific DataRecord by index or a generator of DataRecords by slice.
 
         Args:
-            item (int): The index of the record to retrieve.
+            item (int or slice): The index or slice of the record(s) to retrieve.
 
         Returns:
-            DataRecord: The DataRecord object at the specified index.
+            DataRecord or Generator of DataRecord: A single DataRecord object or a generator for lazy loading.
         """
-        return DataRecord(record_file=self.record_map[item])
+        if isinstance(item, slice):
+            # Wenn item ein Slice ist, erstelle einen Generator für DataRecords
+            return (DataRecord(record_file=path) for path in self.record_map[item])
+        elif isinstance(item, int):
+            # Wenn item ein einzelner Index ist, gibt ein einzelnes DataRecord zurück
+            return DataRecord(record_file=self.record_map[item])
+        else:
+            raise TypeError("Index must be an integer or a slice")
 
     def __iter__(self) -> Iterator['DataRecord']:
         """Return an iterator over DataRecord objects in the directory.

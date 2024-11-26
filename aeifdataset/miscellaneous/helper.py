@@ -9,7 +9,7 @@ Classes:
     ReprFormaterMixin: A mixin class providing methods for formatting numpy arrays and nested objects.
 
 Functions:
-    unix_to_utc(unix_time, precision='ns', timezone_offset_hours=2): Converts a Unix timestamp to a formatted UTC time string.
+    unix_to_utc(unix_time, precision='ns', timezone='Europe/Berlin'): Converts a Unix timestamp to a formatted UTC time string.
     compute_checksum(data): Computes the SHA-256 checksum for a given data block.
     read_checksum(data): Reads and separates the SHA-256 checksum from a data stream.
     read_data_block(data, dtype_length=INT_LENGTH): Reads a block of data from a byte stream, using a length prefix.
@@ -25,24 +25,29 @@ from datetime import datetime, timedelta
 import numpy as np
 import hashlib
 import dill
+import pytz
 
 
 class TimestampMixin:
     """Mixin class to provide a method for timestamp conversion."""
 
-    def get_timestamp(self, precision='ns', timezone_offset_hours=2) -> str:
-        """Convert the timestamp to a formatted string.
+    def get_timestamp(self, precision='ns', timezone: str = 'Europe/Berlin') -> str:
+        """Convert the timestamp to a formatted string using a specific timezone.
 
         Args:
-            precision (str): Desired precision for the timestamp ('ns' or 's').
-            timezone_offset_hours (int): Timezone offset in hours.
+            precision (str): Desired precision for the timestamp ('ns' for nanoseconds or 's' for seconds).
+                             Defaults to 'ns'.
+            timezone (str): The timezone for the conversion (e.g., 'Europe/Berlin'). Defaults to 'Europe/Berlin'.
 
         Returns:
-            str: The formatted timestamp.
+            str: The formatted timestamp as a string.
+
+        Raises:
+            ValueError: If the precision is not 'ns' or 's'.
         """
         if not hasattr(self, 'timestamp') or self.timestamp is None:
             return 'None'
-        return unix_to_utc(self.timestamp, precision=precision, timezone_offset_hours=timezone_offset_hours)
+        return unix_to_utc(self.timestamp, precision=precision, timezone=timezone)
 
 
 class ReprFormaterMixin:
@@ -68,35 +73,33 @@ class ReprFormaterMixin:
         return indented_obj_repr
 
 
-def unix_to_utc(unix_time: Decimal, precision='ns', timezone_offset_hours=2) -> str:
-    """Convert a Unix timestamp to a formatted UTC time string.
-
-    This function converts a Unix timestamp (with nanosecond precision) to a
-    UTC time string. The result can be formatted with second or nanosecond
-    precision, and the function can adjust for a given timezone offset.
+def unix_to_utc(unix_time: Decimal, precision='ns', timezone: str = 'Europe/Berlin') -> str:
+    """Convert a Unix timestamp to a formatted local time string with dynamic timezone handling.
 
     Args:
         unix_time (Decimal): The Unix timestamp as a `Decimal`, representing time since epoch.
         precision (str): The desired precision of the output ('ns' for nanoseconds, 's' for seconds). Defaults to 'ns'.
-        timezone_offset_hours (int): The timezone offset in hours to compute local time. Defaults to 2.
+        timezone (str): The timezone to compute local time. Defaults to 'Europe/Berlin'.
 
     Returns:
-        str: The UTC time formatted as a string, with the specified precision.
+        str: The local time formatted as a string, with the specified precision.
 
     Raises:
         ValueError: If an unsupported precision is provided.
     """
-    # Convert the timestamp to nanosecond precision
-    unix_time_str = str(unix_time).replace('.', '')
-    unix_time_ns = Decimal(unix_time_str)
-
+    # Convert Decimal to nanoseconds
+    unix_time_ns = Decimal(str(unix_time).replace('.', ''))
     seconds = int(unix_time_ns) // 1000000000
     nanoseconds = int(unix_time_ns) % 1000000000
 
-    utc_time = datetime.utcfromtimestamp(seconds)
-    utc_time += timedelta(seconds=nanoseconds / 1e9)
-    # Compute the local time with the specified timezone offset
-    local_time = utc_time + timedelta(hours=timezone_offset_hours)
+    utc_time = datetime.utcfromtimestamp(seconds).replace(tzinfo=pytz.utc) + timedelta(seconds=nanoseconds / 1e9)
+
+    try:
+        local_tz = pytz.timezone(timezone)
+    except pytz.UnknownTimeZoneError:
+        raise ValueError(f"Invalid timezone '{timezone}' provided.")
+
+    local_time = utc_time.astimezone(local_tz)
 
     if precision == 'ns':
         local_time_str = local_time.strftime('%Y-%m-%d_%H-%M-%S') + f'.{nanoseconds:09d}'
