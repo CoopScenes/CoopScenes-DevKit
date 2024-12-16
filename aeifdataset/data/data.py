@@ -18,7 +18,7 @@ data types, as well as utility functions like converting timestamps to human-rea
 from typing import Optional, Dict
 from decimal import Decimal
 from PIL import Image as PilImage
-from aeifdataset.miscellaneous import read_data_block, TimestampMixin, ReprFormaterMixin
+from aeifdataset.miscellaneous import read_data_block, TimestampMixin, ReprFormaterMixin, REPACK
 import numpy as np
 from io import BytesIO
 import zstandard as zstd
@@ -263,9 +263,12 @@ class Image(TimestampMixin):
         Returns:
             bytes: Serialized byte representation of the compressed image and timestamp.
         """
-        img_byte_arr = BytesIO()
-        self.image.save(img_byte_arr, format='JPEG', quality=85)
-        encoded_img = img_byte_arr.getvalue()
+        if REPACK:
+            encoded_img = self._img_bytes
+        else:
+            img_byte_arr = BytesIO()
+            self.image.save(img_byte_arr, format='JPEG', quality=85)
+            encoded_img = img_byte_arr.getvalue()
 
         encoded_ts = str(self.timestamp).encode('utf-8')
         img_len = len(encoded_img).to_bytes(4, 'big')
@@ -287,6 +290,9 @@ class Image(TimestampMixin):
 
         img_instance = cls()
         img_instance.timestamp = Decimal(ts_bytes.decode('utf-8'))
+
+        if REPACK:
+            img_instance._img_bytes = img_bytes
 
         img_stream = BytesIO(img_bytes)
         img_instance.image = PilImage.open(img_stream)
@@ -348,9 +354,12 @@ class Points(TimestampMixin):
         Returns:
             bytes: Serialized byte representation of the points and timestamp.
         """
-        encoded_pts = self.points.tobytes()
-        compressor = zstd.ZstdCompressor(level=22)
-        compressed_pts = compressor.compress(encoded_pts)
+        if REPACK:
+            compressed_pts = self._pts_bytes
+        else:
+            encoded_pts = self.points.tobytes()
+            compressor = zstd.ZstdCompressor(level=22)
+            compressed_pts = compressor.compress(encoded_pts)
 
         encoded_ts = str(self.timestamp).encode('utf-8')
         pts_len = len(compressed_pts).to_bytes(4, 'big')
@@ -369,13 +378,16 @@ class Points(TimestampMixin):
             Points: The deserialized Points object.
         """
         pts_bytes, data = read_data_block(data)
-        
+
         decompressor = zstd.ZstdDecompressor()
         pts_bytes_uncompressed = decompressor.decompress(pts_bytes)
 
         ts_bytes, _ = read_data_block(data)
         pts_instance = cls()
         pts_instance.timestamp = Decimal(ts_bytes.decode('utf-8'))
+
+        if REPACK:
+            pts_instance._pts_bytes = pts_bytes
 
         pts_instance.points = np.frombuffer(pts_bytes_uncompressed, dtype=dtype)
         return pts_instance

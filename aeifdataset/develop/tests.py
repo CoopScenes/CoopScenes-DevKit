@@ -120,8 +120,8 @@ def format_to_4x4_matrix(line_content: str) -> np.ndarray:
 
 if __name__ == '__main__':
     save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
-    dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_1_maille")
-    frame = DataRecord('/mnt/hot_data/dataset/seq_1_maille/id00999_2024-09-27_10-35-41.4mse')[13]
+    dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_1")
+    frame = DataRecord('/mnt/hot_data/dataset/seq_1/id00999_2024-09-27_10-35-41.4mse')[18]
 
     # Save one image as png or jpeg. Optional suffix can be applied.
     # ad.save_image(camera.image.image, output_path, f'{camera.image.get_timestamp()}_{camera_name}', dtype='jpeg')
@@ -202,8 +202,8 @@ if __name__ == '__main__':
         fail_counter += 1
     print(f"Aktuelle Übereinstimmungen: {match_counter}")
 
-    timestamp_file = "/home/ameise/workspace/GlobalRegistration/venv/bin/results/2024-12-10_11-23-17/temp_poses_tum.txt"
-    data_file = "/home/ameise/workspace/GlobalRegistration/venv/bin/results/2024-12-10_11-23-17/temp_poses_kitti.txt"
+    timestamp_file = "/home/ameise/workspace/GlobalRegistration/venv/bin/results/2024-12-13_13-09-39/seq_1#00699-01399_poses_tum.txt"
+    data_file = "/home/ameise/workspace/GlobalRegistration/venv/bin/results/2024-12-13_13-09-39/seq_1#00699-01399_poses_kitti.txt"
     target_timestamp = frame.timestamp
 
     matching_line_number = find_matching_row(timestamp_file, target_timestamp)
