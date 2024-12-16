@@ -62,6 +62,41 @@ class Pose(ReprFormaterMixin):
         return self.__repr__()
 
 
+class TransformationMtx(ReprFormaterMixin):
+    """Class representing a transformation matrix with rotation and translation components.
+
+    This class describes a transformation matrix that separates the rotation
+    and translation components for transforming between coordinate systems.
+
+    Attributes:
+        rotation (Optional[np.array]): The rotation matrix (3x3).
+        translation (Optional[np.array]): The translation vector (x, y, z).
+    """
+
+    def __init__(self, rotation: Optional[np.array] = None, translation: Optional[np.array] = None):
+        """Initialize a TransformationMtx object with rotation and translation data.
+
+        Args:
+            rotation (Optional[np.array]): The rotation matrix (3x3).
+            translation (Optional[np.array]): The translation vector (x, y, z).
+        """
+        self.rotation = rotation
+        self.translation = translation
+
+    def __repr__(self):
+        """Return a string representation of the TransformationMtx object with rotation and translation."""
+        return (
+            f"TransformationMtx(\n"
+            f"    rotation=\n{self._format_array(self.rotation)},\n"
+            f"    translation={self._format_array(self.translation)}\n"
+            f")"
+        )
+
+    def __str__(self):
+        """Return the same representation as __repr__ for user-friendly output."""
+        return self.__repr__()
+
+
 class ROI:
     """Class representing a Region of Interest (ROI).
 
@@ -303,7 +338,7 @@ class CameraInformation(ReprFormaterMixin):
         aperture (Optional[int]): The aperture size of the camera in mm.
         exposure_time (Optional[int]): The exposure time of the camera in microseconds.
         extrinsic (Optional[Pose]): The extrinsic pose of the Camera sensor relative to the TOP Lidar for the vehicle or the UPPER_PLATFORM Lidar for the tower.
-        stereo_transform (Optional[Pose]): The extrinsic pose of the STEREO_LEFT camera relative to STEREO_RIGHT camera.
+        stereo_transform (Optional[TransformationMtx]): The transformation matrix from STEREO_LEFT camera to STEREO_RIGHT camera.
     """
 
     def __init__(self, name: str, model_name: Optional[str] = None, shape: Optional[Tuple[int, int]] = None,
@@ -312,7 +347,7 @@ class CameraInformation(ReprFormaterMixin):
                  projection_mtx: Optional[np.array] = None, region_of_interest: Optional[ROI] = None,
                  camera_type: Optional[str] = None, focal_length: Optional[int] = None,
                  aperture: Optional[int] = None, exposure_time: Optional[int] = None,
-                 extrinsic: Optional[Pose] = None, stereo_transform: Optional[Pose] = None):
+                 extrinsic: Optional[Pose] = None, stereo_transform: Optional[TransformationMtx] = None):
         """Initialize a CameraInformation object.
 
         Args:
@@ -330,7 +365,7 @@ class CameraInformation(ReprFormaterMixin):
             aperture (Optional[int]): The aperture size of the camera.
             exposure_time (Optional[int]): The exposure time of the camera.
             extrinsic (Optional[Pose]): The extrinsic pose of the Camera sensor relative to the TOP Lidar for the vehicle or the UPPER_PLATFORM Lidar for the tower.
-            stereo_transform (Optional[Pose]): The extrinsic pose of the STEREO_LEFT camera relative to STEREO_RIGHT camera.
+            stereo_transform (Optional[TransformationMtx]): The transformation matrix from STEREO_LEFT camera to STEREO_RIGHT camera.
         """
         self.name = name
         self.model_name = model_name
@@ -374,7 +409,7 @@ class CameraInformation(ReprFormaterMixin):
         for key, value in info_dict.items():
             if isinstance(value, np.ndarray):
                 info_dict[key] = str(value.tolist())
-            elif isinstance(value, (ROI, Pose)):
+            elif isinstance(value, (ROI, Pose, TransformationMtx)):
                 info_dict[key] = str(value)
             elif isinstance(value, tuple):
                 info_dict[key] = ', '.join(map(str, value))
