@@ -50,6 +50,30 @@ class Transformation:
         self._translation = np.array([x, y, z], dtype=float)
         self._rotation = np.array([roll, pitch, yaw], dtype=float)
         self._update_transformation_matrix()
+        
+    @classmethod
+    def from_matrix(cls, at, to, transformation_mtx):
+        """
+        Create a Transformation object from a 4x4 transformation matrix.
+
+        Args:
+            at (str): The origin frame of the transformation.
+            to (str): The destination frame of the transformation.
+            transformation_mtx (np.array): A 4x4 transformation matrix.
+
+        Returns:
+            Transformation: A new Transformation object.
+        """
+        if transformation_mtx.shape != (4, 4):
+            raise ValueError("The input matrix must be a 4x4 transformation matrix.")
+
+        # Extract translation and Euler angles
+        translation_vector, euler_angles = cls.extract_translation_and_euler_from_matrix(transformation_mtx)
+        x, y, z = translation_vector
+        roll, pitch, yaw = euler_angles
+
+        # Initialize the Transformation object
+        return cls(at, to, x, y, z, roll, pitch, yaw)
 
     @property
     def at(self):
