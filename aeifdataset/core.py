@@ -40,21 +40,22 @@ class DataRecord:
         Raises:
             InvalidFileTypeError: If the provided file is not in the .4mse format.
         """
-        self.name: Optional[str] = record_file
+        self.path: Optional[str] = record_file
+        self.name: Optional[str] = None
         self.num_frames: int = 0
         self.frame_lengths: List[int] = []
         self.frames_data: bytes = b""
-        if record_file is not None:
-            if os.path.splitext(record_file)[1] != ".4mse":
+        if self.path is not None:
+            if os.path.splitext(self.path)[1] != ".4mse":
                 raise InvalidFileTypeError("This is not a valid AMEISE-Record file.")
-            with open(record_file, 'rb') as file:
+            with open(self.path, 'rb') as file:
                 # Read frame_lengths (array with num_frames entries)
                 frame_lengths_len: int = int.from_bytes(file.read(INT_LENGTH), 'big')
                 self.frame_lengths = obj_from_bytes(file.read(frame_lengths_len))
                 # Read frames
                 self.frames_data: bytes = file.read()
             self.num_frames: int = len(self.frame_lengths)
-            self.name = os.path.splitext(os.path.basename(record_file))[0]
+            self.name = os.path.splitext(os.path.basename(self.path))[0]
 
     def __len__(self):
         """Return the number of frames in the DataRecord."""
