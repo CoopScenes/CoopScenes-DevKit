@@ -21,81 +21,47 @@ import numpy as np
 class Transformation:
     """Class representing a 3D transformation consisting of translation and rotation.
 
-    This class provides utilities to manage transformations between different coordinate frames,
-    including combining and inverting transformations.
-
     Attributes:
         at (str): The origin frame of the transformation.
         to (str): The destination frame of the transformation.
-        translation (np.array): The translation vector (x, y, z).
-        rotation (np.array): The rotation vector (roll, pitch, yaw) in radians.
         transformation_mtx (np.array): The 4x4 transformation matrix combining rotation and translation.
     """
 
-    def __init__(self, at, to, x, y, z, roll, pitch, yaw):
+    def __init__(self, at: str, to: str, transformation_mtx: np.array):
         """Initialize the Transformation object.
 
         Args:
             at (str): The origin frame of the transformation.
             to (str): The destination frame of the transformation.
-            x (float): X component of the translation vector.
-            y (float): Y component of the translation vector.
-            z (float): Z component of the translation vector.
-            roll (float): Roll component of the rotation in radians.
-            pitch (float): Pitch component of the rotation in radians.
-            yaw (float): Yaw component of the rotation in radians.
+            transformation_mtx (np.array): The 4x4 transformation matrix.
         """
-        self._at = at
-        self._to = to
-        self._translation = np.array([x, y, z], dtype=float)
-        self._rotation = np.array([roll, pitch, yaw], dtype=float)
-        self._update_transformation_matrix()
-        
+        self.at = at
+        self.to = to
+        self.mtx = transformation_mtx
+
     @classmethod
-    def from_matrix(cls, at, to, transformation_mtx):
-        """
-        Create a Transformation object from a 4x4 transformation matrix.
+    def from_xyz_and_rpy(cls, at: str, to: str, xyz: np.array, rpy: np.array):
+        """Create a Transformation object from translation (xyz) and rotation (rpy).
 
         Args:
             at (str): The origin frame of the transformation.
             to (str): The destination frame of the transformation.
-            transformation_mtx (np.array): A 4x4 transformation matrix.
+            xyz (np.array): Translation vector [x, y, z].
+            rpy (np.array): Rotation vector [roll, pitch, yaw] in radians.
 
         Returns:
             Transformation: A new Transformation object.
         """
-        if transformation_mtx.shape != (4, 4):
-            raise ValueError("The input matrix must be a 4x4 transformation matrix.")
-
-        # Extract translation and Euler angles
-        translation_vector, euler_angles = cls.extract_translation_and_euler_from_matrix(transformation_mtx)
-        x, y, z = translation_vector
-        roll, pitch, yaw = euler_angles
-
-        # Initialize the Transformation object
-        return cls(at, to, x, y, z, roll, pitch, yaw)
+        # Erstelle die 4x4 Transformationsmatrix aus xyz und rpy
+        rotation_matrix = R.from_euler('xyz', rpy, degrees=False).as_matrix()
+        transformation_mtx = np.identity(4)
+        transformation_mtx[:3, :3] = rotation_matrix
+        transformation_mtx[:3, 3] = xyz
+        return cls(at, to, transformation_mtx)
 
     @property
-    def at(self):
-        """str: The origin frame of the transformation."""
-        return self._at
-
-    @at.setter
-    def at(self, value):
-        self._at = value
-
-    @property
-    def to(self):
-        """str: The destination frame of the transformation."""
-        return self._to
-
-    @to.setter
-    def to(self, value):
-        self._to = value
-
-    @property
-    def translation(self):
-        """np.array: The translation vector (x, y, z)."""
+    def translation(self) -> np.array:
+        """Get or set the translation vector (x, y, z)."""
         return self._translation
 
     @translation.setter
@@ -104,8 +70,8 @@ class Transformation:
         self._update_transformation_matrix()
 
     @property
-    def rotation(self):
-        """np.array: The rotation vector (roll, pitch, yaw) in radians."""
+    def rotation(self) -> np.array:
+        """Get or set the rotation vector (roll, pitch, yaw) in radians."""
         return self._rotation
 
     @rotation.setter
@@ -113,13 +79,32 @@ class Transformation:
         self._rotation = np.array(value, dtype=float)
         self._update_transformation_matrix()
 
+    @property
+    def mtx(self) -> np.array:
+        """Get or set the 4x4 transformation matrix."""
+        return self._transformation_mtx
+
+    @mtx.setter
+    def mtx(self, value):
+        if value.shape != (4, 4):
+            raise ValueError("Transformation matrix must be 4x4.")
+        self._transformation_mtx = value.copy()
+        self._extract_translation_and_rotation()
+
     def _update_transformation_matrix(self):
-        """Update the 4x4 transformation matrix based on the current translation and rotation."""
+        """Update the 4x4 transformation matrix based on current translation and rotation."""
         rotation = R.from_euler('xyz', self._rotation, degrees=False)
         rotation_matrix = rotation.as_matrix()
-        self.transformation_mtx = np.identity(4)
-        self.transformation_mtx[:3, :3] = rotation_matrix
-        self.transformation_mtx[:3, 3] = self._translation
+        self._transformation_mtx = np.identity(4)
+        self._transformation_mtx[:3, :3] = rotation_matrix
+        self._transformation_mtx[:3, 3] = self._translation
+
+    def _extract_translation_and_rotation(self):
+        """Extract translation and rotation from the transformation matrix."""
+        self._translation = self._transformation_mtx[:3, 3]
+        rotation_matrix = self._transformation_mtx[:3, :3]
+        rotation = R.from_matrix(rotation_matrix)
+        self._rotation = rotation.as_euler('xyz', degrees=False)
 
     def combine_transformation(self, transformation_to):
         """Combine this transformation with another transformation.
@@ -130,17 +115,8 @@ class Transformation:
         Returns:
             Transformation: The new combined transformation.
         """
-        second_transformation_mtx = transformation_to.transformation_mtx
-        new_transformation_mtx = np.dot(second_transformation_mtx, self.transformation_mtx)
-
-        translation_vector, euler_angles = Transformation.extract_translation_and_euler_from_matrix(
-            new_transformation_mtx)
-        x, y, z = translation_vector
-        roll, pitch, yaw = euler_angles
-
-        new_transformation = Transformation(self.at, transformation_to.to, x, y, z, roll, pitch, yaw)
-
-        return new_transformation
+        new_transformation_mtx = np.dot(transformation_to.mtx, self.mtx)
+        return Transformation(self.at, transformation_to.to, transformation_mtx=new_transformation_mtx)
 
     def invert_transformation(self):
         """Invert this transformation.
@@ -148,42 +124,14 @@ class Transformation:
         Returns:
             Transformation: The inverted transformation.
         """
-        inverse_transformation_matrix = np.linalg.inv(self.transformation_mtx)
-
-        translation_vector, euler_angles = Transformation.extract_translation_and_euler_from_matrix(
-            inverse_transformation_matrix)
-        x, y, z = translation_vector
-        roll, pitch, yaw = euler_angles
-
-        inverse_transformation = Transformation(self.to, self.at, x, y, z, roll, pitch, yaw)
-
-        return inverse_transformation
-
-    @staticmethod
-    def extract_translation_and_euler_from_matrix(mtx):
-        """Extract translation vector and Euler angles from a 4x4 transformation matrix.
-
-        Args:
-            mtx (np.array): The 4x4 transformation matrix.
-
-        Returns:
-            tuple: A tuple containing the translation vector and Euler angles in radians.
-        """
-        # Extract the translation vector
-        translation_vector = mtx[:3, 3]
-
-        # Extract the rotation matrix and convert to Euler angles (radians)
-        rotation_matrix = mtx[:3, :3]
-        rotation = R.from_matrix(rotation_matrix)
-        euler_angles_rad = rotation.as_euler('xyz', degrees=False)
-
-        return translation_vector, euler_angles_rad
+        inverse_mtx = np.linalg.inv(self.mtx)
+        return Transformation(self.to, self.at, transformation_mtx=inverse_mtx)
 
     def __repr__(self):
         """Return a string representation of the Transformation object."""
         translation_str = ', '.join(f"{coord:.3f}" for coord in self.translation)
         rotation_str = ', '.join(f"{angle:.3f}" for angle in self.rotation)
-        return (f"Transformation at {self._at} to {self._to},\n"
+        return (f"Transformation at {self.at} to {self.to},\n"
                 f"  translation=[{translation_str}],\n"
                 f"  rotation=[{rotation_str}]\n")
 
@@ -225,10 +173,7 @@ def get_transformation(sensor_info: Union[
     else:
         sensor_at = 'ins'
 
-    x, y, z = sensor_info.extrinsic.xyz
-    roll, pitch, yaw = sensor_info.extrinsic.rpy
-
-    tf = Transformation(sensor_at, sensor_to, x, y, z, roll, pitch, yaw)
+    tf = Transformation(sensor_at, sensor_to, sensor_info.extrinsic)
     return tf
 
 
@@ -258,6 +203,6 @@ def transform_points_to_origin(data: Union[Lidar, Tuple[np.ndarray, LidarInforma
 
     # Get the transformation matrix and apply it
     trans = get_transformation(lidar_info)
-    transformed_points = trans.transformation_mtx @ points
+    transformed_points = trans.mtx @ points
 
     return transformed_points.T[:, :3]

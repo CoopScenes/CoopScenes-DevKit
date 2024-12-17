@@ -52,7 +52,7 @@ def get_projection(lidar: Lidar, camera: Camera) -> Tuple[np.ndarray, np.ndarray
     points_3d_homogeneous = np.hstack((points_3d, np.ones((points_3d.shape[0], 1))))
 
     # Transform points to camera coordinates
-    points_in_camera = lidar_to_cam_tf.transformation_mtx.dot(points_3d_homogeneous.T).T
+    points_in_camera = lidar_to_cam_tf.mtx.dot(points_3d_homogeneous.T).T
 
     # Apply rectification and projection to points
     points_in_camera = rect_mtx.dot(points_in_camera.T).T

@@ -2,7 +2,7 @@ import aeifdataset as ad
 
 import numpy as np
 import open3d as o3d
-from math import radians, sin, cos, sqrt, atan2
+from math import radians, cos, sqrt
 from build.lib.aeifdataset import DataRecord
 from decimal import Decimal
 
@@ -121,7 +121,9 @@ def format_to_4x4_matrix(line_content: str) -> np.ndarray:
 if __name__ == '__main__':
     save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
     dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_1")
-    frame = DataRecord('/mnt/hot_data/dataset/seq_1/id00999_2024-09-27_10-35-41.4mse')[18]
+    frame = DataRecord('/mnt/hot_data/dataset/seq_1/id00021_2024-09-27_10-31-32.4mse')[18]
+
+    trans = ad.Transformation('ad1', 'ad2', frame.vehicle.lidars.LEFT.info.extrinsic)
 
     # Save one image as png or jpeg. Optional suffix can be applied.
     # ad.save_image(camera.image.image, output_path, f'{camera.image.get_timestamp()}_{camera_name}', dtype='jpeg')
@@ -172,7 +174,7 @@ if __name__ == '__main__':
         )
 
         # Transformationsmatrix nach RANSAC
-        initial_transform = ransac_result.transformation
+        initial_transform = ransac_result.mtx
         fail_counter = 0  # Fehlschlagzähler zurücksetzen
     else:
         # Nutze die vorherige Transformation als Initialisierung für ICP
@@ -185,7 +187,7 @@ if __name__ == '__main__':
         o3d.pipelines.registration.TransformationEstimationPointToPoint()
     )
 
-    transformation_matrix = icp_result.transformation
+    transformation_matrix = icp_result.mtx
 
     # Bewertung der ICP-Registrierung
     fitness = icp_result.fitness

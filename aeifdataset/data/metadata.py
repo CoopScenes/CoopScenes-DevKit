@@ -22,44 +22,8 @@ in autonomous vehicle systems.
 """
 from typing import Tuple, Optional, Dict, List
 import numpy as np
-from numpy import dtype
 
 from aeifdataset.miscellaneous import ReprFormaterMixin
-
-
-class Pose(ReprFormaterMixin):
-    """Class representing the position and rotation of a sensor in 3D space.
-
-    This class describes the position (xyz) and rotation (rpy) of a sensor
-    relative to the reference coordinate system.
-
-    Attributes:
-        xyz (Optional[np.array]): The position in the reference coordinate system (x, y, z).
-        rpy (Optional[np.array]): The rotation in roll, pitch, and yaw (r, p, y).
-    """
-
-    def __init__(self, xyz: Optional[np.array] = None, rpy: Optional[np.array] = None):
-        """Initialize a Pose object with position and rotation data.
-
-        Args:
-            xyz (Optional[np.array]): The position in the reference coordinate system (x, y, z).
-            rpy (Optional[np.array]): The rotation in roll, pitch, and yaw (r, p, y).
-        """
-        self.xyz = xyz
-        self.rpy = rpy
-
-    def __repr__(self):
-        """Return a string representation of the Pose object with xyz and rpy."""
-        return (
-            f"Pose(\n"
-            f"    xyz={self._format_array(self.xyz)},\n"
-            f"    rpy={self._format_array(self.rpy)}\n"
-            f")"
-        )
-
-    def __str__(self):
-        """Return the same representation as __repr__ for user-friendly output."""
-        return self.__repr__()
 
 
 class ROI:
@@ -121,8 +85,8 @@ class VehicleInformation(ReprFormaterMixin):
         height (Optional[Pose]): The height of the TOP Lidar above the ground.
     """
 
-    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None,
-                 height: Optional[Pose] = None):
+    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[np.array] = None,
+                 height: Optional[np.array] = None):
         """Initializes a VehicleInformation object.
 
         Args:
@@ -161,8 +125,8 @@ class TowerInformation(ReprFormaterMixin):
         height (Optional[Pose]): The height of the UPPER_PLATFORM Lidar above the ground.
     """
 
-    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None,
-                 height: Optional[Pose] = None):
+    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[np.array] = None,
+                 height: Optional[np.array] = None):
         """Initializes a TowerInformation object.
 
         Args:
@@ -197,7 +161,7 @@ class IMUInformation(ReprFormaterMixin):
         extrinsic (Optional[Pose]): The extrinsic pose of the IMU sensor relative to the TOP Lidar for the vehicle.
     """
 
-    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
+    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[np.array] = None):
         """Initialize an IMUInformation object.
 
         Args:
@@ -229,7 +193,7 @@ class GNSSInformation(ReprFormaterMixin):
         extrinsic (Optional[Pose]): The extrinsic pose of the GNSS sensor relative to the TOP Lidar for the vehicle.
     """
 
-    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[Pose] = None):
+    def __init__(self, model_name: Optional[str] = None, extrinsic: Optional[np.array] = None):
         """Initialize a GNSSInformation object.
 
         Args:
@@ -312,7 +276,7 @@ class CameraInformation(ReprFormaterMixin):
                  projection_mtx: Optional[np.array] = None, region_of_interest: Optional[ROI] = None,
                  camera_type: Optional[str] = None, focal_length: Optional[int] = None,
                  aperture: Optional[int] = None, exposure_time: Optional[int] = None,
-                 extrinsic: Optional[Pose] = None, stereo_transform: Optional[Pose] = None):
+                 extrinsic: Optional[np.array] = None, stereo_transform: Optional[np.array] = None):
         """Initialize a CameraInformation object.
 
         Args:
@@ -374,7 +338,7 @@ class CameraInformation(ReprFormaterMixin):
         for key, value in info_dict.items():
             if isinstance(value, np.ndarray):
                 info_dict[key] = str(value.tolist())
-            elif isinstance(value, (ROI, Pose)):
+            elif isinstance(value, (ROI)):
                 info_dict[key] = str(value)
             elif isinstance(value, tuple):
                 info_dict[key] = ', '.join(map(str, value))
@@ -414,7 +378,7 @@ class LidarInformation(ReprFormaterMixin):
                  lidar_origin_to_beam_origin_mm: Optional[np.array] = None,
                  horizontal_scanlines: Optional[int] = None, vertical_scanlines: Optional[int] = None,
                  phase_lock_offset: Optional[int] = None, lidar_to_sensor_transform: Optional[np.array] = None,
-                 extrinsic: Optional[Pose] = None, vertical_fov: Optional[float] = None,
+                 extrinsic: Optional[np.array] = None, vertical_fov: Optional[float] = None,
                  horizontal_fov: Optional[float] = None, horizontal_angle_spacing: Optional[float] = None,
                  frame_mode: Optional[str] = None, scan_pattern: Optional[str] = None):
         """Initialize a LidarInformation object.
