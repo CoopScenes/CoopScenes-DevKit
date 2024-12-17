@@ -18,7 +18,7 @@ data types, as well as utility functions like converting timestamps to human-rea
 from typing import Optional, Dict
 from decimal import Decimal
 from PIL import Image as PilImage
-from aeifdataset.miscellaneous import read_data_block, TimestampMixin, ReprFormaterMixin, REPACK
+from aeifdataset.miscellaneous import read_data_block, TimestampMixin, ReprFormaterMixin, Config
 import numpy as np
 from io import BytesIO
 import zstandard as zstd
@@ -263,7 +263,7 @@ class Image(TimestampMixin):
         Returns:
             bytes: Serialized byte representation of the compressed image and timestamp.
         """
-        if REPACK:
+        if Config.REPACK:
             encoded_img = self._img_bytes
         else:
             img_byte_arr = BytesIO()
@@ -291,7 +291,7 @@ class Image(TimestampMixin):
         img_instance = cls()
         img_instance.timestamp = Decimal(ts_bytes.decode('utf-8'))
 
-        if REPACK:
+        if Config.REPACK:
             img_instance._img_bytes = img_bytes
 
         img_stream = BytesIO(img_bytes)
@@ -354,7 +354,7 @@ class Points(TimestampMixin):
         Returns:
             bytes: Serialized byte representation of the points and timestamp.
         """
-        if REPACK:
+        if Config.REPACK:
             compressed_pts = self._pts_bytes
         else:
             encoded_pts = self.points.tobytes()
@@ -386,7 +386,7 @@ class Points(TimestampMixin):
         pts_instance = cls()
         pts_instance.timestamp = Decimal(ts_bytes.decode('utf-8'))
 
-        if REPACK:
+        if Config.REPACK:
             pts_instance._pts_bytes = pts_bytes
 
         pts_instance.points = np.frombuffer(pts_bytes_uncompressed, dtype=dtype)
