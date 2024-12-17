@@ -18,7 +18,7 @@ import importlib.util
 import numpy as np
 import matplotlib.pyplot as plt
 
-from aeifdataset.data import Lidar, Camera, LidarInformation, Pose
+from aeifdataset.data import Lidar, Camera, LidarInformation
 from aeifdataset.utils import get_projection, get_disparity_map, transform_points_to_origin
 
 
@@ -205,8 +205,7 @@ def show_points(*lidars: Union[
         elif isinstance(lidar_or_points, np.ndarray) and lidar_or_points.shape[1] == 3:  # Assuming it's a (n, 3) array
             points = transform_points_to_origin(
                 (lidar_or_points, LidarInformation(name='',
-                                                   extrinsic=Pose(np.array([0, 0, 0]), np.array(
-                                                       [0, 0, 0])))))  # Transform raw np.ndarray points
+                                                   extrinsic=np.identity(4))))  # Transform raw np.ndarray points
         else:
             raise ValueError(
                 "Each entry must be a Lidar object, a (n, 3) ndarray, or a tuple of either with an optional color.")
