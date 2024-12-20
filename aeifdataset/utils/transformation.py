@@ -13,7 +13,7 @@ Functions:
 """
 from typing import Union, Tuple
 from aeifdataset.data import Lidar, Camera, IMU, GNSS, Dynamics, CameraInformation, LidarInformation, GNSSInformation, \
-    IMUInformation, DynamicsInformation
+    IMUInformation, DynamicsInformation, VehicleInformation, Vehicle
 from scipy.spatial.transform import Rotation as R
 import numpy as np
 
@@ -137,7 +137,7 @@ class Transformation:
 
 
 def get_transformation(sensor_info: Union[
-    Camera, Lidar, IMU, GNSS, CameraInformation, LidarInformation, IMUInformation, GNSSInformation]) -> Transformation:
+    Camera, Lidar, IMU, GNSS, Vehicle, CameraInformation, LidarInformation, IMUInformation, GNSSInformation, VehicleInformation]) -> Transformation:
     """Create a Transformation object for a given sensor or its corresponding information object.
 
     Args:
@@ -158,10 +158,11 @@ def get_transformation(sensor_info: Union[
             "Dynamics and DynamicsInformation are not supported for this function yet. \
              Create your own Transformation object off the correct sensor until implemented.")
 
-    if 'view' in getattr(sensor_info, 'name', ''):
-        sensor_to = 'lidar_upper_platform/os_sensor'
+    if any(key in getattr(sensor_info, 'name', '').lower() for key in
+           ['left', 'right', 'top']) or 'microstrain' in getattr(sensor_info, 'model_name', '').lower():
+        sensor_to = 'lidar_top'
     else:
-        sensor_to = 'lidar_top/os_sensor'
+        sensor_to = 'lidar_upper_platform'
 
     if isinstance(sensor_info, CameraInformation):
         sensor_at = f'cam_{sensor_info.name}'
@@ -169,7 +170,9 @@ def get_transformation(sensor_info: Union[
         if 'view' in getattr(sensor_info, 'name', ''):
             sensor_at = f'lidar_{sensor_info.name}'
         else:
-            sensor_at = f'lidar_{sensor_info.name}/os_sensor'
+            sensor_at = f'lidar_{sensor_info.name}'
+    elif isinstance(sensor_info, VehicleInformation):
+        sensor_at = 'lidar_top'
     else:
         sensor_at = 'ins'
 

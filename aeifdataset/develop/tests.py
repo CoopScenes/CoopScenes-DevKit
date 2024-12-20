@@ -3,7 +3,6 @@ import aeifdataset as ad
 import numpy as np
 import open3d as o3d
 from math import radians, cos, sqrt
-from build.lib.aeifdataset import DataRecord
 from decimal import Decimal
 
 
@@ -121,9 +120,48 @@ def format_to_4x4_matrix(line_content: str) -> np.ndarray:
 if __name__ == '__main__':
     save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
     dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_1")
-    frame = DataRecord('/mnt/hot_data/dataset/seq_1/id00021_2024-09-27_10-31-32.4mse')[18]
+    frame = ad.DataRecord('/mnt/hot_data/dataset/seq_1/id00021_2024-09-27_10-31-32.4mse')[18]
+    # gps to kml file
 
-    trans = ad.Transformation('ad1', 'ad2', frame.vehicle.lidars.LEFT.info.extrinsic)
+    maneuvers = ad.get_maneuver_split('/mnt/hot_data/dataset/seq_1')
+
+    for maneuver in maneuvers:
+        import simplekml
+        from datetime import datetime
+
+        # KML-Datei erstellen
+        kml = simplekml.Kml()
+
+        # Positionen aus dem Manöver hinzufügen
+        for record in maneuver:
+            for frame in record:
+                for pos in [frame.vehicle.GNSS.position[0]]:
+                    # Sekunden und Nanosekunden extrahieren
+                    raw_timestamp = pos.timestamp
+                    seconds = raw_timestamp // 1_000_000_000  # Ganzzahlige Sekunden
+                    nanoseconds = raw_timestamp % 1_000_000_000  # Restliche Nanosekunden
+
+                    # Zeitstempel formatieren
+                    timestamp = datetime.utcfromtimestamp(int(seconds))
+                    formatted_timestamp = f"{timestamp.isoformat()}.{int(nanoseconds):09d}Z"
+
+                    # Punkt hinzufügen
+                    point = kml.newpoint(name="Position", coords=[(pos.longitude, pos.latitude)])
+                    point.timestamp.when = formatted_timestamp  # Zeitstempel mit Nanosekunden
+
+        # Fahrverlauf als Linie mit Zeitstempeln
+        line = kml.newlinestring(name="Fahrverlauf")
+        line.coords = [
+            (frame.vehicle.GNSS.position[0].longitude, frame.vehicle.GNSS.position[0].latitude)
+            for record in maneuver
+            for frame in record
+        ]
+        line.style.linestyle.color = simplekml.Color.blue
+        line.style.linestyle.width = 3
+
+        # KML speichern
+        kml.save("fahrverlauf_with_nanoseconds.kml")
+        print("Fahrverlauf mit Nanosekundenpräzision in fahrverlauf_with_nanoseconds.kml gespeichert.")
 
     # Save one image as png or jpeg. Optional suffix can be applied.
     # ad.save_image(camera.image.image, output_path, f'{camera.image.get_timestamp()}_{camera_name}', dtype='jpeg')
@@ -134,13 +172,12 @@ if __name__ == '__main__':
     previous_transform = None
     fail_counter = 0
     match_counter = 0  # Zähler für erfolgreiche Übereinstimmungen
-    '''
+
     for datarecord in dataset:
         for frame in datarecord:
-            frame.timestamp
-    '''
+            frame.vehicle.GNSS.position
 
-    points_tower = frame.tower.lidars.UPPER_PLATFORM
+    points_tower = frame.tower.lidars.UPPER_PLATFORM4
     points_vehicle = frame.vehicle.lidars.TOP
 
     points_tower_xyz = structured_to_xyz(points_tower)
