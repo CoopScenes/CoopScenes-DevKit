@@ -5,6 +5,8 @@ import open3d as o3d
 from math import radians, cos, sqrt
 from decimal import Decimal
 
+from build.lib.aeifdataset import LidarInformation
+
 
 def filter_points(points, x_range, y_range, z_range):
     x_min, x_max = x_range
@@ -120,11 +122,29 @@ def format_to_4x4_matrix(line_content: str) -> np.ndarray:
 if __name__ == '__main__':
     save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
     dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_1")
-    frame = ad.DataRecord('/mnt/hot_data/dataset/seq_1/id00021_2024-09-27_10-31-32.4mse')[18]
-    # gps to kml file
+    frame = ad.DataRecord('/mnt/hot_data/temp/seq_1/id07103_2024-09-27_11-47-19.4mse')[18]
+
+    # ad.show_points((frame.vehicle, (255, 0, 0)), (frame.tower, (0, 255, 0)))
+
+    points = []
+    points_color = []
+
+    for agent in frame:
+        for _, camera in agent.cameras:
+            for _, lidar in agent.lidars:
+                pts_3d, proj_2d, color = ad.get_rgb_projection(lidar, camera, vehicle_info=frame.vehicle.info)
+                if pts_3d.size > 0:
+                    points.append(ad.transform_points_to_origin((pts_3d, lidar.info), vehicle_info=frame.vehicle.info))
+                    points_color.append(color)
+
+    points = np.vstack(points)
+    points_color = np.vstack(points_color)
+
+    # Visualize the fused point cloud with attached RGB values
+    ad.show_points((points, points_color), point_size=5, vehicle_info=frame.vehicle.info)
 
     maneuvers = ad.get_maneuver_split('/mnt/hot_data/dataset/seq_1')
-
+    '''
     for maneuver in maneuvers:
         import simplekml
         from datetime import datetime
@@ -169,107 +189,7 @@ if __name__ == '__main__':
     # ad.save_dataset_images_multithreaded(dataset, output_path, use_raw=True, num_cores=8)
     # Aktuelle Übereinstimmungen: 1831
 
-    previous_transform = None
-    fail_counter = 0
-    match_counter = 0  # Zähler für erfolgreiche Übereinstimmungen
 
-    for datarecord in dataset:
-        for frame in datarecord:
-            frame.vehicle.GNSS.position
-
-    points_tower = frame.tower.lidars.UPPER_PLATFORM4
-    points_vehicle = frame.vehicle.lidars.TOP
-
-    points_tower_xyz = structured_to_xyz(points_tower)
-    points_vehicle_xyz = structured_to_xyz(points_vehicle)
-
-    # Open3D-Punktwolken für beide Sensoren erstellen
-    pcd_tower = numpy_to_open3d(points_tower_xyz)
-    pcd_vehicle = numpy_to_open3d(points_vehicle_xyz)
-
-    # Parameter anpassen
-    voxel_size = 1.0  # Größerer Wert für Downsampling und Feature-Berechnung
-    distance_threshold = voxel_size * 5  # Größere Schwelle für RANSAC-Registrierung
-
-    # Wenn entweder `previous_transform` leer ist oder der Fehlschlagzähler 3 erreicht hat, führe RANSAC aus
-    if previous_transform is None or fail_counter >= 3:
-        # Vorverarbeitung der Punktwolken und Berechnung von FPFH-Features
-        pcd_tower_down, fpfh_tower = preprocess_point_cloud(pcd_tower, voxel_size)
-        pcd_vehicle_down, fpfh_vehicle = preprocess_point_cloud(pcd_vehicle, voxel_size)
-
-        ransac_result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
-            pcd_vehicle_down, pcd_tower_down, fpfh_vehicle, fpfh_tower,
-            False,
-            80.0,
-            o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
-            5,
-            [
-                o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.7),
-                o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(80.0)
-            ],
-            o3d.pipelines.registration.RANSACConvergenceCriteria(500000, 500)
-        )
-
-        # Transformationsmatrix nach RANSAC
-        initial_transform = ransac_result.mtx
-        fail_counter = 0  # Fehlschlagzähler zurücksetzen
-    else:
-        # Nutze die vorherige Transformation als Initialisierung für ICP
-        initial_transform = previous_transform
-
-    # Feinausrichtung mit ICP
-    threshold = 1.0  # Maximale Distanz für Paarbildung in ICP
-    icp_result = o3d.pipelines.registration.registration_icp(
-        pcd_vehicle, pcd_tower, threshold, initial_transform,
-        o3d.pipelines.registration.TransformationEstimationPointToPoint()
-    )
-
-    transformation_matrix = icp_result.mtx
-
-    # Bewertung der ICP-Registrierung
-    fitness = icp_result.fitness
-    inlier_rmse = icp_result.inlier_rmse
-
-    # Überprüfung der Fitness- und RMSE-Bedingung
-    if 0.6 < fitness < 0.8 and inlier_rmse < 0.367:
-        # Setze die Transformation als `previous_transform` für den nächsten Durchlauf
-        previous_transform = transformation_matrix
-        fail_counter = 0  # Fehlschlagzähler zurücksetzen
-        match_counter += 1  # Zähler für erfolgreiche Übereinstimmung erhöhen
-    else:
-        # Falls die Bedingungen nicht erfüllt sind, erhöhe den Fehlschlagzähler
-        fail_counter += 1
-    print(f"Aktuelle Übereinstimmungen: {match_counter}")
-
-    timestamp_file = "/home/ameise/workspace/GlobalRegistration/venv/bin/results/2024-12-13_13-09-39/seq_1#00699-01399_poses_tum.txt"
-    data_file = "/home/ameise/workspace/GlobalRegistration/venv/bin/results/2024-12-13_13-09-39/seq_1#00699-01399_poses_kitti.txt"
-    target_timestamp = frame.timestamp
-
-    matching_line_number = find_matching_row(timestamp_file, target_timestamp)
-
-    if matching_line_number != -1:
-        # Read the corresponding line from the data file
-        matching_line_content = read_line_by_number(data_file, matching_line_number)
-        # Format the line as a 4x4 matrix
-        matrix = format_to_4x4_matrix(matching_line_content)
-    else:
-        print("No matching line found.")
-
-    # Inverse der Fahrzeug-zu-Turm-Transformation (Tower → Vehicle)
-    tower_to_vehicle_transform = np.linalg.inv(transformation_matrix)
-
-    # Endgültige Transformation von Tower → Global
-    tower_to_global_transform = np.dot(matrix, tower_to_vehicle_transform)
-
-    # Punkte im Tower-Koordinatensystem transformieren
-    tower_points_global = np.dot(tower_to_global_transform,
-                                 np.hstack((points_tower_xyz, np.ones((points_tower_xyz.shape[0], 1)))).T).T
-
-    # Transformation ausgeben
-    print("Tower to Global Transformation Matrix:")
-    print(tower_to_global_transform)
-
-    '''
     # Transformiere die Fahrzeug-Punktwolke mit der resultierenden Transformationsmatrix
     pcd_vehicle_transformed = pcd_vehicle.transform(transformation_matrix)
 
