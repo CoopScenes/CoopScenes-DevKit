@@ -18,6 +18,8 @@ from aeifdataset.data import Lidar, Camera, IMU, GNSS, Dynamics, CameraInformati
     IMUInformation, DynamicsInformation, VehicleInformation, Vehicle
 from scipy.spatial.transform import Rotation as R
 import numpy as np
+from kiss_icp.preprocess import get_preprocessor
+from kiss_icp.config import KISSConfig
 
 
 class Transformation:
@@ -216,5 +218,31 @@ def transform_points_to_origin(data: Union[Lidar, Tuple[np.ndarray, LidarInforma
     return transformed_points[:3].T
 
 def get_deskewed_points(data: Union[Lidar, Tuple[Points, LidarInformation]]):
+    if isinstance(data, Lidar):
+        points = data._points_raw
+        lidar_info = data.info
+    else:
+        points, lidar_info = data
+    if hasattr(lidar_info, 'last_frame_transform'):
+        if lidar_info.last_frame_transform is not None:
+            k_config = KISSConfig()
+            k_config.data.max_range = 1000
+            k_config.data.min_range = 0
+            k_config.data.deskew = True
+            k_config.registration.max_num_threads = 0
+            preprocessor = get_preprocessor(k_config)
 
-    return None
+            points_ts = points['t']
+            # normalize
+            timestamps = (points_ts - points_ts.min()) / (points_ts.max() - points_ts.min())
+            points_xyz = np.stack((points['x'], points['y'], points['z']), axis=-1)
+
+            # apply motion compensation, invert timestamps since the algorithm "shifts" the points to the end of the
+            # motion. We compensate reverse to maintain frame integrity.
+            points_deskewed = preprocessor.preprocess(points_xyz, 1 - timestamps, lidar_info.last_frame_transform)
+            fields = ['intensity', 't', 'reflectivity', 'ring', 'ambient']
+            points_additional = np.stack([points[field] for field in fields], axis=-1)
+            combined_data = np.hstack((points_deskewed, points_additional))
+            deskewed_points_structured = np.array([tuple(row) for row in combined_data], dtype=np.dtype(LidarInformation._os_dtype_structure()))
+            return Points(deskewed_points_structured, points.timestamp)
+    return Points(points.points, points.timestamp)

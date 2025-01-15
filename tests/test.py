@@ -138,16 +138,22 @@ if __name__ == '__main__':
     tf3 = tf.combine_transformation(tf2.invert_transformation())
     tf4 = tf2.combine_transformation(tf.invert_transformation())
 
+    lidar_points = frame2.tower.lidars.UPPER_PLATFORM
+    #lidar_points.info.set_last_frame_transform(tf3.mtx)
 
+    image = ad.get_projection_img(frame2.tower.cameras.VIEW_2,
+                                  lidar_points)
+    image.show()
 
+    """
     def _get_timestamps(points):
         points_ts = points['t']
         normalized_points_ts = (points_ts - points_ts.min()) / (points_ts.max() - points_ts.min())
         return normalized_points_ts
 
 
-    lidar_points = frame.vehicle.lidars.LEFT
-    lidar_points2 = frame2.vehicle.lidars.LEFT
+    lidar_points = frame.vehicle.lidars.TOP
+    lidar_points2 = frame2.vehicle.lidars.TOP
     k_config = KISSConfig()
     k_config.data.max_range = 200
     k_config.data.min_range = 0
@@ -175,6 +181,7 @@ if __name__ == '__main__':
                                   ad.Lidar(lidar_points.info, ad.Points(lidar_points_new_new)))
     image.show()
     image2.show()
+    """
 
     # frame.tower.cameras.VIEW_2.show()
     # frame.tower.cameras.VIEW_1.show()

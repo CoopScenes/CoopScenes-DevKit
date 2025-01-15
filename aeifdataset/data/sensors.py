@@ -110,10 +110,11 @@ class Lidar:
             points (Optional[Points]): The point cloud data.
         """
         self.info = info
-        self.points = points
+        self._points_raw = points
+        self._points_deskewd = None
 
     @property
-    def _points(self) -> np.array:
+    def points(self) -> np.array:
         """Get the rectified image from the raw data.
 
         Returns:
@@ -123,14 +124,24 @@ class Lidar:
             AttributeError: If the raw image data is not set.
         """
         from aeifdataset.utils import get_deskewed_points
-        if self._points_raw is not None:
-            return get_deskewed_points(self)
-        raise AttributeError("Image is not set.")
+        if self._points_deskewd is None:
+            if self._points_raw is not None:
+                self._points_deskewd = get_deskewed_points(self)
+            else:
+                raise AttributeError("Raw points are not set.")
+        return self._points_deskewd
 
     def __getattr__(self, attr) -> np.array:
         """Handle dynamic access to point cloud attributes."""
-        if self.points is not None and hasattr(self.points, attr):
-            return getattr(self.points, attr)
+        if self._points_deskewd is None:
+            from aeifdataset.utils import get_deskewed_points
+            if self._points_raw is not None:
+                self._points_deskewd = get_deskewed_points(self)
+            else:
+                raise AttributeError("Raw points are not set.")
+        if hasattr(self._points_deskewd, attr):
+            return getattr(self._points_deskewd, attr)
+
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
 
     def __getitem__(self, index: int) -> np.array:
@@ -142,7 +153,7 @@ class Lidar:
         Returns:
             np.array: The indexed points data.
         """
-        if self.points is not None and self.points.points is not None:
+        if self.points is not None:
             return self.points.points[index]
         raise IndexError(f"'{type(self).__name__}' object has no points data to index.")
 
@@ -168,7 +179,7 @@ class Lidar:
         info_bytes, data = read_data_block(data)
         setattr(instance, 'info', obj_from_bytes(info_bytes))
         points, _ = deserialize(data, Points, instance.info.dtype)
-        setattr(instance, 'points', points)
+        setattr(instance, '_points_raw', points)
         return instance
 
 
