@@ -6,4 +6,5 @@ opencv-python
 matplotlib
 zstandard
 pytz
+kiss-icp==1.2.0
 # open3d

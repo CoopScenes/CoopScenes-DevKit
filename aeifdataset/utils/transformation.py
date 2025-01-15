@@ -12,6 +12,8 @@ Functions:
     transform_points_to_origin: Transforms LiDAR points to the origin of the associated agent or global coordinate system.
 """
 from typing import Union, Tuple, Optional
+
+from aeifdataset import Points
 from aeifdataset.data import Lidar, Camera, IMU, GNSS, Dynamics, CameraInformation, LidarInformation, GNSSInformation, \
     IMUInformation, DynamicsInformation, VehicleInformation, Vehicle
 from scipy.spatial.transform import Rotation as R
@@ -204,7 +206,7 @@ def transform_points_to_origin(data: Union[Lidar, Tuple[np.ndarray, LidarInforma
     trans = get_transformation(lidar_info)
 
     if any(key in getattr(lidar_info, 'name', '').lower() for key in ['left', 'right', 'top']):
-        if vehicle_info is not None:
+        if vehicle_info is not None and vehicle_info.extrinsic is not None:
             trans = trans.combine_transformation(get_transformation(vehicle_info))
         else:
             print('Missing vehicle information. Resulting points are in local agent coordinate system.')
@@ -212,3 +214,7 @@ def transform_points_to_origin(data: Union[Lidar, Tuple[np.ndarray, LidarInforma
     transformed_points = trans.mtx @ points_homogeneous
 
     return transformed_points[:3].T
+
+def get_deskewed_points(data: Union[Lidar, Tuple[Points, LidarInformation]]):
+
+    return None

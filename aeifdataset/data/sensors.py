@@ -112,6 +112,21 @@ class Lidar:
         self.info = info
         self.points = points
 
+    @property
+    def _points(self) -> np.array:
+        """Get the rectified image from the raw data.
+
+        Returns:
+            PilImage: The rectified image as a PIL image object.
+
+        Raises:
+            AttributeError: If the raw image data is not set.
+        """
+        from aeifdataset.utils import get_deskewed_points
+        if self._points_raw is not None:
+            return get_deskewed_points(self)
+        raise AttributeError("Image is not set.")
+
     def __getattr__(self, attr) -> np.array:
         """Handle dynamic access to point cloud attributes."""
         if self.points is not None and hasattr(self.points, attr):

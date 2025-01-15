@@ -438,7 +438,9 @@ class LidarInformation(ReprFormaterMixin):
     def _initialize_ouster(self, beam_altitude_angles: Optional[np.array], beam_azimuth_angles: Optional[np.array],
                            lidar_origin_to_beam_origin_mm: Optional[np.array], horizontal_scanlines: Optional[int],
                            vertical_scanlines: Optional[int], phase_lock_offset: Optional[int],
-                           lidar_to_sensor_transform: Optional[np.array]):
+                           lidar_to_sensor_transform: Optional[np.array],
+                           #last_frame_transform: Optional[np.array]
+                           ):
         """Initialize attributes specific to Ouster Lidar sensors."""
         self.beam_altitude_angles = beam_altitude_angles
         self.beam_azimuth_angles = beam_azimuth_angles
@@ -448,6 +450,7 @@ class LidarInformation(ReprFormaterMixin):
         self.phase_lock_offset = phase_lock_offset
         self.lidar_to_sensor_transform = lidar_to_sensor_transform
         self.dtype = np.dtype(self._os_dtype_structure())
+        #self.last_frame_transform = last_frame_transform
 
     @staticmethod
     def _os_dtype_structure() -> Dict[str, List]:
