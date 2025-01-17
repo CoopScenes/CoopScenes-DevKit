@@ -92,22 +92,24 @@ class Camera:
 
 
 class Lidar:
-    """Class representing a Lidar sensor.
+    """Class representing a LiDAR sensor.
 
-    The Lidar class handles the lidar information and point cloud data. It provides
-    dynamic access to point cloud attributes and supports serialization.
+    The Lidar class manages metadata and point cloud data for a LiDAR sensor. It provides properties
+    for accessing deskewed (motion-compensated) point cloud data and supports serialization.
 
     Attributes:
-        info (Optional[LidarInformation]): Metadata about the lidar.
-        points (Optional[Points]): The point cloud data.
+        info (Optional[LidarInformation]): Metadata about the LiDAR sensor, including specifications
+            such as extrinsic calibration, motion transformation, and field of view.
+        _points_raw (Optional[Points]): The raw point cloud data as a structured array.
+        _points_deskewd (Optional[np.array]): The deskewed (motion-compensated) point cloud data.
     """
 
     def __init__(self, info: Optional[LidarInformation] = None, points: Optional[Points] = None):
-        """Initialize a Lidar object with lidar information and point cloud data.
+        """Initialize a Lidar object with metadata and point cloud data.
 
         Args:
-            info (Optional[LidarInformation]): Lidar metadata.
-            points (Optional[Points]): The point cloud data.
+            info (Optional[LidarInformation]): Metadata about the LiDAR sensor.
+            points (Optional[Points]): Raw point cloud data as a structured array.
         """
         self.info = info
         self._points_raw = points
@@ -115,13 +117,16 @@ class Lidar:
 
     @property
     def points(self) -> np.array:
-        """Get the rectified image from the raw data.
+        """Get the motion-compensated point cloud data.
+
+        This property provides deskewed LiDAR points by applying motion compensation
+        if necessary. The points are cached for subsequent accesses.
 
         Returns:
-            PilImage: The rectified image as a PIL image object.
+            np.array: The deskewed point cloud data.
 
         Raises:
-            AttributeError: If the raw image data is not set.
+            AttributeError: If raw point cloud data is not set.
         """
         from aeifdataset.utils import get_deskewed_points
         if self._points_deskewd is None:
@@ -132,7 +137,17 @@ class Lidar:
         return self._points_deskewd
 
     def __getattr__(self, attr) -> np.array:
-        """Handle dynamic access to point cloud attributes."""
+        """Handle dynamic access to point cloud attributes.
+
+        Args:
+            attr (str): Attribute name to access dynamically.
+
+        Returns:
+            np.array: The attribute value if it exists.
+
+        Raises:
+            AttributeError: If the attribute does not exist or raw points are not set.
+        """
         if self._points_deskewd is None:
             from aeifdataset.utils import get_deskewed_points
             if self._points_raw is not None:
@@ -151,23 +166,31 @@ class Lidar:
             index (int): Index to access the points array.
 
         Returns:
-            np.array: The indexed points data.
+            np.array: The indexed point cloud data.
+
+        Raises:
+            IndexError: If the points array is not set or the index is invalid.
         """
         if self.points is not None:
             return self.points.points[index]
         raise IndexError(f"'{type(self).__name__}' object has no points data to index.")
 
     def to_bytes(self) -> bytes:
-        """Serialize the lidar data to bytes.
+        """Serialize the LiDAR data to bytes.
+
+        This method serializes the metadata and point cloud data for storage or transmission.
 
         Returns:
-            bytes: Serialized byte representation of the lidar's information and point cloud.
+            bytes: Serialized byte representation of the LiDAR's metadata and point cloud.
         """
         return obj_to_bytes(self.info) + serialize(self.points)
 
     @classmethod
     def from_bytes(cls, data: bytes) -> 'Lidar':
         """Deserialize bytes to create a Lidar object.
+
+        This method reconstructs a Lidar object from serialized data, including its
+        metadata and raw point cloud.
 
         Args:
             data (bytes): The serialized byte data to deserialize.
