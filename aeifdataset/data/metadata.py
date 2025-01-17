@@ -348,24 +348,28 @@ class CameraInformation(ReprFormaterMixin):
 
 
 class LidarInformation(ReprFormaterMixin):
-    """Class representing metadata about a Lidar sensor.
+    """Represents metadata about a Lidar sensor.
 
     Attributes:
         name (str): The name of the Lidar sensor.
         model_name (Optional[str]): The model name of the Lidar sensor.
-        extrinsic (Optional[Pose]): The extrinsic pose of the Lidar sensor relative to the TOP Lidar for the vehicle or the UPPER_PLATFORM Lidar for the tower.
+        extrinsic (Optional[Pose]): The extrinsic pose of the Lidar sensor relative to the
+            TOP Lidar for the vehicle or the UPPER_PLATFORM Lidar for the tower.
         vertical_fov (Optional[float]): The vertical field of view of the Lidar (for Blickfeld sensors).
         horizontal_fov (Optional[float]): The horizontal field of view of the Lidar (for Blickfeld sensors).
         beam_altitude_angles (Optional[np.array]): Beam altitude angles (for Ouster sensors).
         beam_azimuth_angles (Optional[np.array]): Beam azimuth angles (for Ouster sensors).
-        lidar_origin_to_beam_origin_mm (Optional[np.array]): Distance from the Lidar origin to the beam origin in mm (for Ouster sensors).
+        lidar_origin_to_beam_origin_mm (Optional[np.array]): Distance from the Lidar origin to the beam
+            origin in mm (for Ouster sensors).
         horizontal_scanlines (Optional[int]): The number of horizontal scanlines (for Ouster sensors).
         vertical_scanlines (Optional[int]): The number of vertical scanlines (for Ouster sensors).
         phase_lock_offset (Optional[int]): The phase lock offset (for Ouster sensors).
-        lidar_to_sensor_transform (Optional[np.array]): Transformation matrix from the Lidar frame to the sensor frame (for Ouster sensors).
+        lidar_to_sensor_transform (Optional[np.array]): Transformation matrix from the Lidar frame
+            to the sensor frame (for Ouster sensors).
         horizontal_angle_spacing (Optional[float]): The horizontal angle spacing of the Lidar (for Blickfeld sensors).
         frame_mode (Optional[str]): The frame mode of the Lidar (for Blickfeld sensors).
         scan_pattern (Optional[str]): The scan pattern of the Lidar (for Blickfeld sensors).
+        motion_transform (Optional[np.array]): Transformation matrix for motion compensation (for Ouster sensor).
         dtype (np.dtype): Data type structure of the Lidar point cloud data.
     """
 
@@ -395,11 +399,13 @@ class LidarInformation(ReprFormaterMixin):
             horizontal_angle_spacing (Optional[float]): The horizontal angle spacing of the Lidar (for Blickfeld sensors).
             frame_mode (Optional[str]): The frame mode of the Lidar (for Blickfeld sensors).
             scan_pattern (Optional[str]): The scan pattern of the Lidar (for Blickfeld sensors).
+            motion_transform (Optional[np.array]): Transformation matrix for motion compensation (for Ouster sensor).
             dtype (np.dtype): Data type structure of the Lidar point cloud data.
         """
         self.name = name
         self.model_name = model_name
         self.extrinsic = extrinsic
+        self.motion_transform = None
 
         # Initialize attributes based on sensor type
         if 'view' in name.lower():
@@ -438,7 +444,9 @@ class LidarInformation(ReprFormaterMixin):
     def _initialize_ouster(self, beam_altitude_angles: Optional[np.array], beam_azimuth_angles: Optional[np.array],
                            lidar_origin_to_beam_origin_mm: Optional[np.array], horizontal_scanlines: Optional[int],
                            vertical_scanlines: Optional[int], phase_lock_offset: Optional[int],
-                           lidar_to_sensor_transform: Optional[np.array]):
+                           lidar_to_sensor_transform: Optional[np.array],
+                           motion_transform: Optional[np.array] = None
+                           ):
         """Initialize attributes specific to Ouster Lidar sensors."""
         self.beam_altitude_angles = beam_altitude_angles
         self.beam_azimuth_angles = beam_azimuth_angles
@@ -448,6 +456,7 @@ class LidarInformation(ReprFormaterMixin):
         self.phase_lock_offset = phase_lock_offset
         self.lidar_to_sensor_transform = lidar_to_sensor_transform
         self.dtype = np.dtype(self._os_dtype_structure())
+        self.motion_transform = motion_transform
 
     @staticmethod
     def _os_dtype_structure() -> Dict[str, List]:

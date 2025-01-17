@@ -1,9 +1,12 @@
 import aeifdataset as ad
+# from aeifdataset.utils.transformation import apply_transformation_to_points
 
 import numpy as np
 import open3d as o3d
 from math import radians, cos, sqrt
 from decimal import Decimal
+from kiss_icp.preprocess import get_preprocessor
+from kiss_icp.config import KISSConfig
 
 from build.lib.aeifdataset import LidarInformation
 
@@ -118,14 +121,83 @@ def format_to_4x4_matrix(line_content: str) -> np.ndarray:
     matrix[3, :] = [0, 0, 0, 1]  # Set the last row to [0, 0, 0, 1]
     return matrix
 
+    # id01814_2024-10-12_11-44-04.4mse
+    # id00865_2024-10-12_11-36-35.4mse
+
 
 if __name__ == '__main__':
-    save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
-    dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_1")
-    frame = ad.DataRecord('/mnt/hot_data/temp/seq_1/id07103_2024-09-27_11-47-19.4mse')[18]
+    # save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
+    # dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_1")
+    frame_num = 1
+    assert frame_num >= 1
+    frame = ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_4/id02322_2024-10-12_11-48-23.4mse')[
+        frame_num]
+    frame2 = ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_4/id02322_2024-10-12_11-48-23.4mse')[
+        frame_num + 1]
+    frame3 = ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_4/id02322_2024-10-12_11-48-23.4mse')[
+        frame_num + 2]
+    tf = ad.get_transformation(frame.vehicle.info)
+    tf2 = ad.get_transformation(frame2.vehicle.info)
+    tf3 = ad.get_transformation(frame.vehicle.lidars.LEFT)
 
-    # ad.show_points((frame.vehicle, (255, 0, 0)), (frame.tower, (0, 255, 0)))
+    tf4 = tf3.combine_transformation(tf.combine_transformation(tf2.invert_transformation())).combine_transformation(
+        tf3.invert_transformation())
 
+    lidar_points = frame.vehicle.lidars.LEFT
+
+    lidar_points.info.set_motion_transform(tf4.mtx)
+
+    image = ad.get_projection_img(frame.vehicle.cameras.STEREO_LEFT,
+                                  lidar_points)
+
+    image.show()
+
+    """
+    def _get_timestamps(points):
+        points_ts = points['t']
+        normalized_points_ts = (points_ts - points_ts.min()) / (points_ts.max() - points_ts.min())
+        return normalized_points_ts
+
+
+    lidar_points = frame.vehicle.lidars.TOP
+    lidar_points2 = frame2.vehicle.lidars.TOP
+    k_config = KISSConfig()
+    k_config.data.max_range = 200
+    k_config.data.min_range = 0
+    k_config.data.deskew = True
+    k_config.registration.max_num_threads = 0
+
+    pts = structured_to_xyz(lidar_points)
+    pts2 = structured_to_xyz(lidar_points2)
+
+    preprocessor = get_preprocessor(k_config)
+    # points_scam = ad.transform_points_to_origin(lidar_points)
+    ts = _get_timestamps(lidar_points)
+    flipped_arr = 1 - ts
+    # transfom to top
+    lidar_points_new = preprocessor.preprocess(pts2, flipped_arr, tf3.mtx)
+    lidar_points_new_new = preprocessor.preprocess(pts, ts, tf4.mtx)
+
+    # ad.show_points((lidar_points, (255, 0, 0)), (lidar_points_new, (0, 255, 0)))
+    # back transform
+    image = ad.get_projection_img(frame2.vehicle.cameras.STEREO_LEFT,
+                                  ad.Lidar(lidar_points.info, ad.Points(lidar_points_new)))
+    #image2 = ad.get_projection_img(frame2.vehicle.cameras.STEREO_LEFT,
+    #                               lidar_points)
+    image2 = ad.get_projection_img(frame2.vehicle.cameras.STEREO_LEFT,
+                                  ad.Lidar(lidar_points.info, ad.Points(lidar_points_new_new)))
+    image.show()
+    image2.show()
+    """
+
+    # frame.tower.cameras.VIEW_2.show()
+    # frame.tower.cameras.VIEW_1.show()
+    # frame.vehicle.cameras.STEREO_LEFT.show()
+
+    # ad.show_points(frame)
+
+    # ad.show_points((frame.vehicle, (64, 200, 200)), (frame.tower, (219, 48, 130)))
+    '''
     points = []
     points_color = []
 
@@ -143,8 +215,9 @@ if __name__ == '__main__':
     # Visualize the fused point cloud with attached RGB values
     ad.show_points((points, points_color), point_size=5, vehicle_info=frame.vehicle.info)
 
+
     maneuvers = ad.get_maneuver_split('/mnt/hot_data/dataset/seq_1')
-    '''
+
     for maneuver in maneuvers:
         import simplekml
         from datetime import datetime
@@ -212,14 +285,14 @@ if __name__ == '__main__':
             speed = np.linalg.norm(frame.vehicle.DYNAMICS.velocity[0].linear_velocity) * 3.6
             if speed < 1:
                 print(f'Datarecord: {datarecord.name}, Frame: {frame.frame_id}')
-    
+
     image = frame.vehicle.cameras.STEREO_LEFT
-    
-    
+
+
     points_left = frame.vehicle.lidars.LEFT
     points_top = frame.vehicle.lidars.TOP
     points_right = frame.vehicle.lidars.RIGHT
-    
+
         ad.show_points(
         (points_left, (255, 0, 0)),
         (points_top, (0, 255, 0)),
@@ -230,11 +303,11 @@ if __name__ == '__main__':
         (points_left, (255, 0, 0)),
         (points_top, (0, 255, 0))
     )
-    
+
     xyz_points = np.stack(
         (points_left['x'], points_left['y'], points_left['z']), axis=-1)
     visualize_lidar_points(xyz_points, title='Upper Platform LiDAR Point Cloud')
-    
+
     LEFT
     x_range = (-2.9, 1.8)
     y_range = (-1.7, 1.6)
@@ -244,11 +317,11 @@ if __name__ == '__main__':
     x_range = (-1.2, 1.5)
     y_range = (-0.6, 1.7)
     z_range = (-1.1, 0)
-    
+
     new_pts = filter_points(points_right, x_range, y_range, z_range)
     coordinates = np.vstack((new_pts['x'], new_pts['y'], new_pts['z'])).T
     ad.show_points(points_right)
-    
+
     ad.save_image(image, '/mnt/hot_data/samples')
     ad.show_points(points)
 

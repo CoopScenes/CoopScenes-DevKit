@@ -1,7 +1,8 @@
 """
-This module provides functionality for handling 3D transformations, especially for sensors such as
+This module provides functionality for handling 3D transformations and processing LiDAR data, especially for sensors such as
 Lidar, Camera, IMU, and GNSS. It includes classes and functions to create, combine, and invert transformations,
-as well as to extract parameters like translation and rotation.
+as well as to extract parameters like translation and rotation. Additionally, the module provides methods for
+deskewing LiDAR point clouds to account for motion distortion.
 
 Classes:
     Transformation: Represents a 3D transformation consisting of translation and rotation, providing methods
@@ -10,12 +11,17 @@ Classes:
 Functions:
     get_transformation: Creates a Transformation object for a given sensor (Camera, Lidar, IMU, GNSS).
     transform_points_to_origin: Transforms LiDAR points to the origin of the associated agent or global coordinate system.
+    get_deskewed_points: Deskews LiDAR points by compensating for motion distortion using transformation matrices.
 """
 from typing import Union, Tuple, Optional
+
+from aeifdataset import Points
 from aeifdataset.data import Lidar, Camera, IMU, GNSS, Dynamics, CameraInformation, LidarInformation, GNSSInformation, \
     IMUInformation, DynamicsInformation, VehicleInformation, Vehicle
 from scipy.spatial.transform import Rotation as R
 import numpy as np
+from kiss_icp.preprocess import get_preprocessor
+from kiss_icp.config import KISSConfig
 
 
 class Transformation:
@@ -204,7 +210,7 @@ def transform_points_to_origin(data: Union[Lidar, Tuple[np.ndarray, LidarInforma
     trans = get_transformation(lidar_info)
 
     if any(key in getattr(lidar_info, 'name', '').lower() for key in ['left', 'right', 'top']):
-        if vehicle_info is not None:
+        if vehicle_info is not None and vehicle_info.extrinsic is not None:
             trans = trans.combine_transformation(get_transformation(vehicle_info))
         else:
             print('Missing vehicle information. Resulting points are in local agent coordinate system.')
@@ -212,3 +218,55 @@ def transform_points_to_origin(data: Union[Lidar, Tuple[np.ndarray, LidarInforma
     transformed_points = trans.mtx @ points_homogeneous
 
     return transformed_points[:3].T
+
+
+def get_deskewed_points(data: Union[Lidar, Tuple[Points, LidarInformation]]) -> Points:
+    """Applies motion compensation to deskew LiDAR points.
+
+    This function processes LiDAR points to correct for motion distortion caused by sensor movement during data capture.
+    It uses transformation matrices provided in the LiDAR information (`motion_transform`) to deskew the point cloud.
+
+    Args:
+        data (Union[Lidar, Tuple[Points, LidarInformation]]): The LiDAR data to be deskewed. This can be either:
+            - A `Lidar` object containing raw points and associated metadata.
+            - A tuple of `Points` and `LidarInformation`.
+
+    Returns:
+        Points: The deskewed LiDAR point cloud as a structured array with additional fields like intensity, timestamp,
+            reflectivity, ring, and ambient light data.
+
+    Notes:
+        - If the `motion_transform` attribute in `LidarInformation` is `None`, the function returns the original points
+          without deskewing.
+        - Deskewing is performed using a preprocessor from the KISS-ICP library.
+        - The timestamps are normalized to account for motion during data acquisition.
+    """
+    if isinstance(data, Lidar):
+        points = data._points_raw
+        lidar_info = data.info
+    else:
+        points, lidar_info = data
+    if hasattr(lidar_info, 'motion_transform'):
+        if lidar_info.motion_transform is not None:
+            k_config = KISSConfig()
+            k_config.data.max_range = 1000
+            k_config.data.min_range = 0
+            k_config.data.deskew = True
+            k_config.registration.max_num_threads = 0
+            preprocessor = get_preprocessor(k_config)
+
+            points_ts = points['t']
+            # normalize
+            timestamps = (points_ts - points_ts.min()) / (points_ts.max() - points_ts.min())
+            points_xyz = np.stack((points['x'], points['y'], points['z']), axis=-1)
+
+            # apply motion compensation, invert timestamps since the algorithm "shifts" the points to the end of the
+            # motion. We compensate reverse to maintain frame integrity.
+            points_deskewed = preprocessor.preprocess(points_xyz, 1 - timestamps, lidar_info.motion_transform)
+            fields = ['intensity', 't', 'reflectivity', 'ring', 'ambient']
+            points_additional = np.stack([points[field] for field in fields], axis=-1)
+            combined_data = np.hstack((points_deskewed, points_additional))
+            deskewed_points_structured = np.array([tuple(row) for row in combined_data],
+                                                  dtype=np.dtype(LidarInformation._os_dtype_structure()))
+            return Points(deskewed_points_structured, points.timestamp)
+    return Points(points.points, points.timestamp)
