@@ -380,7 +380,8 @@ class LidarInformation(ReprFormaterMixin):
                  phase_lock_offset: Optional[int] = None, lidar_to_sensor_transform: Optional[np.array] = None,
                  extrinsic: Optional[np.array] = None, vertical_fov: Optional[float] = None,
                  horizontal_fov: Optional[float] = None, horizontal_angle_spacing: Optional[float] = None,
-                 frame_mode: Optional[str] = None, scan_pattern: Optional[str] = None):
+                 frame_mode: Optional[str] = None, scan_pattern: Optional[str] = None,
+                 motion_transform: Optional[np.array] = None, ):
         """Initialize a LidarInformation object.
 
         Args:
@@ -405,7 +406,6 @@ class LidarInformation(ReprFormaterMixin):
         self.name = name
         self.model_name = model_name
         self.extrinsic = extrinsic
-        self.motion_transform = None
 
         # Initialize attributes based on sensor type
         if 'view' in name.lower():
@@ -413,7 +413,7 @@ class LidarInformation(ReprFormaterMixin):
         else:
             self._initialize_ouster(beam_altitude_angles, beam_azimuth_angles, lidar_origin_to_beam_origin_mm,
                                     horizontal_scanlines, vertical_scanlines, phase_lock_offset,
-                                    lidar_to_sensor_transform)
+                                    lidar_to_sensor_transform, motion_transform)
 
     def __repr__(self):
         """Return a string representation of the LidarInformation object with key attributes."""
