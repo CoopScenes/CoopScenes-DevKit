@@ -183,7 +183,7 @@ class Lidar:
         Returns:
             bytes: Serialized byte representation of the LiDAR's metadata and point cloud.
         """
-        return obj_to_bytes(self.info) + serialize(self.points)
+        return obj_to_bytes(self.info) + serialize(self._points_raw)
 
     @classmethod
     def from_bytes(cls, data: bytes) -> 'Lidar':
