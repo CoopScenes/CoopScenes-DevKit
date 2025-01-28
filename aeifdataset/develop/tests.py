@@ -131,6 +131,9 @@ if __name__ == '__main__':
 
     # frame = ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_2/id03954_2024-10-05_12-13-56.4mse')[50]
     for frame in ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_6/id01442_2024-10-29_09-08-17.4mse')[5:25]:
+        print(frame.vehicle.cameras.STEREO_LEFT.info)
+        print(frame.vehicle.DYNAMICS.velocity[0])
+        print(frame.vehicle.IMU[0])
         stereo_left = frame.vehicle.cameras.STEREO_LEFT
         stereo_right = frame.vehicle.cameras.STEREO_RIGHT
 
