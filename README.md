@@ -2,7 +2,7 @@
 
 ![AmeiseLogo](https://raw.githubusercontent.com/MarcelVSHNS/ameise-dataset/main/docs/Ameise_logo.png) 
 
-Dev-Kit for records collected during [Project AMEISE](https://ameise.wandelgesellschaft.de/). Visit our CoopScenes Website at [aeif-dataset.eu](https://aeif-dataset.github.io/)
+Dev-Kit for records collected during [Project AMEISE](https://ameise.wandelgesellschaft.de/). Visit our CoopScenes Website at [CoopScenes.github.io](https://coopscenes.github.io/)
 
 ## Description
 
