@@ -127,30 +127,32 @@ def format_to_4x4_matrix(line_content: str) -> np.ndarray:
 
 if __name__ == '__main__':
     # save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
-    # dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_1")
-    frame_num = 1
-    assert frame_num >= 1
-    frame = ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_4/id02322_2024-10-12_11-48-23.4mse')[
-        frame_num]
-    frame2 = ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_4/id02322_2024-10-12_11-48-23.4mse')[
-        frame_num + 1]
-    frame3 = ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_4/id02322_2024-10-12_11-48-23.4mse')[
-        frame_num + 2]
-    tf = ad.get_transformation(frame.vehicle.info)
-    tf2 = ad.get_transformation(frame2.vehicle.info)
-    tf3 = ad.get_transformation(frame.vehicle.lidars.LEFT)
+    # dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_6")
 
-    tf4 = tf3.combine_transformation(tf.combine_transformation(tf2.invert_transformation())).combine_transformation(
-        tf3.invert_transformation())
+    # frame = ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_2/id03954_2024-10-05_12-13-56.4mse')[50]
+    for frame in ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_6/id01442_2024-10-29_09-08-17.4mse')[5:25]:
+        stereo_left = frame.vehicle.cameras.STEREO_LEFT
+        stereo_right = frame.vehicle.cameras.STEREO_RIGHT
 
-    lidar_points = frame.vehicle.lidars.LEFT
+        # Retrieve disparity map from stereo images
+        disparity_map = ad.get_disparity_map(stereo_left, stereo_right)
 
-    lidar_points.info.set_motion_transform(tf4.mtx)
+        # Generate a depth map from stereo images
+        depth_map = ad.get_depth_map(stereo_left, stereo_right)
 
-    image = ad.get_projection_img(frame.vehicle.cameras.STEREO_LEFT,
-                                  lidar_points)
+        # Alternatively, convert a disparity map to a depth map using camera parameters
+        depth_map = ad.disparity_to_depth(disparity_map, stereo_right.info)
 
-    image.show()
+        image = frame.vehicle.cameras.STEREO_LEFT
+
+        proj_img = ad.get_projection_img(image, (frame.vehicle, (64, 200, 200)),
+                                         (frame.tower, (219, 48, 130)))
+        proj_img_2 = ad.get_projection_img(image, frame, min_range=0, max_range=35)
+
+        # ad.show_points((frame.vehicle, (64, 200, 200)), (frame.tower, (219, 48, 130)))
+        speed2 = np.linalg.norm(frame.vehicle.DYNAMICS.velocity[0].linear_velocity) * 3.6
+        print(speed2)
+        proj_img.show()
 
     """
     def _get_timestamps(points):

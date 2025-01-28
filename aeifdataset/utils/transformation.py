@@ -256,12 +256,10 @@ def get_deskewed_points(data: Union[Lidar, Tuple[Points, LidarInformation]]) -> 
             preprocessor = get_preprocessor(k_config)
 
             points_ts = points['t']
-            # normalize
+
             timestamps = (points_ts - points_ts.min()) / (points_ts.max() - points_ts.min())
             points_xyz = np.stack((points['x'], points['y'], points['z']), axis=-1)
 
-            # apply motion compensation, invert timestamps since the algorithm "shifts" the points to the end of the
-            # motion. We compensate reverse to maintain frame integrity.
             points_deskewed = preprocessor.preprocess(points_xyz, 1 - timestamps, lidar_info.motion_transform)
             fields = ['intensity', 't', 'reflectivity', 'ring', 'ambient']
             points_additional = np.stack([points[field] for field in fields], axis=-1)

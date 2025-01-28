@@ -111,19 +111,27 @@ def plot_points_on_image(image: PilImage, points: np.ndarray, points_3d: np.ndar
 
 
 def get_projection_img(camera: Camera,
-                       *lidars: Union[Lidar, Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]],
-                       cmap_name: str = "Spectral", radius: float = 2.5,
-                       min_range: Optional[float] = 4, max_range: Optional[float] = 50,
+                       *args: Union[
+                           Lidar,
+                           Frame,
+                           Vehicle,
+                           Tower,
+                           Tuple[Union[Lidar, Frame, Vehicle, Tower], Optional[Union[str, Tuple[int, int, int]]]]],
+                       cmap_name: str = "Spectral",
+                       radius: float = 2.5,
+                       min_range: Optional[float] = 4,
+                       max_range: Optional[float] = 50,
                        opacity: float = 0.6,
                        vehicle_info: Optional[VehicleInformation] = None) -> PilImage:
     """Generate an image with LiDAR points projected onto a camera image.
 
-    Projects LiDAR points onto a camera image with optional colormap-based or static coloring.
+    Projects LiDAR points from various sources (LiDARs, Frame, Vehicle, Tower) onto a camera image
+    with optional colormap-based or static coloring.
 
     Args:
         camera (Camera): The camera onto which the LiDAR points are projected.
-        *lidars (Union[Lidar, Tuple[Lidar, Optional[Union[str, Tuple[int, int, int]]]]]): One or more LiDAR objects,
-            optionally paired with a static color.
+        *args: One or more sources of LiDAR points, such as Frame, Vehicle, Tower, Lidar, or
+            tuples of (source, optional color).
         cmap_name (str): The name of the colormap for dynamic coloring. Defaults to "Spectral".
         radius (float): The radius of the plotted points. Defaults to 2.5.
         min_range (Optional[float]): Minimum range value for normalization. Defaults to 4.
@@ -137,16 +145,44 @@ def get_projection_img(camera: Camera,
     proj_img = camera.image.image.copy()
 
     lidar_list = []
-    for lidar in lidars:
-        if isinstance(lidar, Lidar):
-            lidar_list.append((lidar, None))
-        elif isinstance(lidar, tuple) and isinstance(lidar[0], Lidar):
-            lidar_list.append(lidar)
+
+    for source in args:
+        if isinstance(source, Lidar):
+            lidar_list.append((source, None))
+        elif isinstance(source, tuple) and isinstance(source[0], (Lidar, Frame, Vehicle, Tower)):
+            obj, static_color = source
+            if isinstance(obj, Frame):
+                vehicle_info = vehicle_info or obj.vehicle.info
+                for _, lidar in (*obj.vehicle.lidars, *obj.tower.lidars):
+                    lidar_list.append((lidar, static_color))
+            elif isinstance(obj, Vehicle):
+                vehicle_info = vehicle_info or obj.info
+                for _, lidar in obj.lidars:
+                    lidar_list.append((lidar, static_color))
+            elif isinstance(obj, Tower):
+                for _, lidar in obj.lidars:
+                    lidar_list.append((lidar, static_color))
+            elif isinstance(obj, Lidar):
+                lidar_list.append((obj, static_color))
+        elif isinstance(source, Frame):
+            vehicle_info = vehicle_info or source.vehicle.info
+            for _, lidar in (*source.vehicle.lidars, *source.tower.lidars):
+                lidar_list.append((lidar, None))
+        elif isinstance(source, Vehicle):
+            vehicle_info = vehicle_info or source.info
+            for _, lidar in source.lidars:
+                lidar_list.append((lidar, None))
+        elif isinstance(source, Tower):
+            for _, lidar in source.lidars:
+                lidar_list.append((lidar, None))
         else:
-            raise ValueError("Each argument must be either a Lidar object or a tuple of (Lidar, optional color).")
+            raise ValueError(
+                "Each source must be a Lidar, Frame, Vehicle, Tower, or a tuple of (source, optional color)."
+            )
 
     for lidar, static_color in lidar_list:
         pts, proj = get_projection(lidar, camera, vehicle_info)
+        pts = transform_points_to_origin((pts, lidar.info), vehicle_info=vehicle_info)
         proj_img = plot_points_on_image(proj_img, proj, pts, static_color=static_color, cmap_name=cmap_name,
                                         radius=radius, min_range=min_range, max_range=max_range, opacity=opacity)
 

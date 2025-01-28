@@ -18,6 +18,7 @@ Functions:
 from typing import Optional, Tuple, Union
 from PIL import Image as PilImage
 from aeifdataset.data import CameraInformation, Camera, Image
+from aeifdataset.utils import Transformation
 import numpy as np
 import cv2
 
@@ -152,7 +153,8 @@ def disparity_to_depth(disparity_map: np.ndarray, camera_info: Union[Camera, Cam
         camera_info = camera_info
 
     focal_length = camera_info.camera_mtx[0][0]
-    baseline = abs(camera_info.stereo_transform.translation[0])
+    stereo_tf = Transformation('stereo_left', 'stereo_right', camera_info.stereo_transform)
+    baseline = abs(stereo_tf.translation[0])
 
     with np.errstate(divide='ignore'):
         depth_map = np.where(disparity_map > 0, (focal_length * baseline) / disparity_map, np.inf)
