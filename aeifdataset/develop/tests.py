@@ -129,11 +129,26 @@ if __name__ == '__main__':
     # save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
     # dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_6")
 
-    # frame = ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_2/id03954_2024-10-05_12-13-56.4mse')[50]
+    frame = ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_1/id00999_2024-09-27_10-35-41.4mse')[16]
+
+    cameras = frame.vehicle.cameras
+    num_cameras = len(cameras)
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(60, 20))
+
+    # Iterate through the cameras and project the LiDAR points onto each image
+    projection = ad.get_projection_img(cameras.FRONT_LEFT, frame.tower, vehicle_info=frame.vehicle.info)
+    plt.imshow(projection)
+    plt.title('front_left')
+    plt.axis('off')
+
+    plt.tight_layout()
+    plt.show()
+
+    '''
     for frame in ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_6/id01442_2024-10-29_09-08-17.4mse')[5:25]:
-        print(frame.vehicle.cameras.STEREO_LEFT.info)
-        print(frame.vehicle.DYNAMICS.velocity[0])
-        print(frame.vehicle.IMU[0])
+        
         stereo_left = frame.vehicle.cameras.STEREO_LEFT
         stereo_right = frame.vehicle.cameras.STEREO_RIGHT
 
@@ -157,7 +172,6 @@ if __name__ == '__main__':
         print(speed2)
         proj_img.show()
 
-    """
     def _get_timestamps(points):
         points_ts = points['t']
         normalized_points_ts = (points_ts - points_ts.min()) / (points_ts.max() - points_ts.min())
@@ -193,7 +207,6 @@ if __name__ == '__main__':
                                   ad.Lidar(lidar_points.info, ad.Points(lidar_points_new_new)))
     image.show()
     image2.show()
-    """
 
     # frame.tower.cameras.VIEW_2.show()
     # frame.tower.cameras.VIEW_1.show()
@@ -202,7 +215,7 @@ if __name__ == '__main__':
     # ad.show_points(frame)
 
     # ad.show_points((frame.vehicle, (64, 200, 200)), (frame.tower, (219, 48, 130)))
-    '''
+
     points = []
     points_color = []
 

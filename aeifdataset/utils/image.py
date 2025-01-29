@@ -153,7 +153,7 @@ def disparity_to_depth(disparity_map: np.ndarray, camera_info: Union[Camera, Cam
         camera_info = camera_info
 
     focal_length = camera_info.camera_mtx[0][0]
-    stereo_tf = Transformation('stereo_left', 'stereo_right', camera_info.stereo_transform)
+    stereo_tf = Transformation('stereo_right', 'stereo_left', camera_info.stereo_transform)
     baseline = abs(stereo_tf.translation[0])
 
     with np.errstate(divide='ignore'):
