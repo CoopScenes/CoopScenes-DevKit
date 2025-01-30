@@ -147,7 +147,6 @@ if __name__ == '__main__':
     proj_img = ad.plot_points_on_image(camera.image.image.copy(), proj, _)
     proj_img.show()
 
-    """
     def _get_timestamps(points):
         points_ts = points['t']
         normalized_points_ts = (points_ts - points_ts.min()) / (points_ts.max() - points_ts.min())
@@ -183,7 +182,6 @@ if __name__ == '__main__':
                                   ad.Lidar(lidar_points.info, ad.Points(lidar_points_new_new)))
     image.show()
     image2.show()
-    """
 
     # frame.tower.cameras.VIEW_2.show()
     # frame.tower.cameras.VIEW_1.show()
@@ -192,7 +190,7 @@ if __name__ == '__main__':
     # ad.show_points(frame)
 
     # ad.show_points((frame.vehicle, (64, 200, 200)), (frame.tower, (219, 48, 130)))
-    '''
+
     points = []
     points_color = []
 

@@ -51,26 +51,34 @@ class TimestampMixin:
 
 
 class ReprFormaterMixin:
-    """Mixin class to provide a method for formatting numpy arrays."""
+    """Mixin class to provide methods for formatting numpy arrays and other objects."""
 
     @staticmethod
-    def _format_array(array: Optional[np.array], precision: int = 3, indent: int = 0) -> str:
-        """Format a numpy array for display."""
+    def _format_array(array: Optional[np.ndarray], precision: int = 3, indent: int = 0) -> str:
+        """Format a numpy array for display with indentation and specified precision."""
         if array is None:
             return 'None'
-        string = np.array2string(array, precision=precision, separator=', ')
-        formated_string = string.replace('\n', '\n' + ' ' * indent)
-        return formated_string
+        # Format array with specified precision and line breaks
+        array_str = np.array2string(
+            array,
+            precision=precision,
+            separator=', ',
+            suppress_small=True,
+            threshold=np.inf
+        )
+        # Indent all lines, including the first
+        lines = array_str.split('\n')
+        formatted_string = '\n'.join([f"{' ' * indent}{line}" for line in lines])
+        return formatted_string
 
     @staticmethod
-    def _format_object(obj, linestart='\n', indent: int = 4) -> str:
-        """Format nested objects like Pose for display with indentation."""
-        if obj is None:
+    def _format_height(height_matrix: Optional[np.ndarray]) -> str:
+        """Format the height value from a 4x4 transformation matrix."""
+        if height_matrix is None:
             return 'None'
-        obj_repr = repr(obj)
-        # Indent each line after the first
-        indented_obj_repr = obj_repr.replace(linestart, linestart + ' ' * indent)
-        return indented_obj_repr
+        # Extract z-translation component from the matrix
+        height_value = height_matrix[2, 3]
+        return f"{height_value:.1f}m"
 
 
 def unix_to_utc(unix_time: Decimal, precision='ns', timezone: str = 'Europe/Berlin') -> str:

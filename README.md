@@ -1,12 +1,12 @@
-# AEIF-D: AMEISE Ego-Vehicle and Infrastructure Fusion - Dataset
+# CoopScenes: Multi-Scene Infrastructure and Vehicle Data for Advancing Collective Perception in Autonomous Driving
 
 ![AmeiseLogo](https://raw.githubusercontent.com/MarcelVSHNS/ameise-dataset/main/docs/Ameise_logo.png) 
 
-Dev-Kit for records collected during [Project AMEISE](https://ameise.wandelgesellschaft.de/). Visit our AEIF Data Collection Website at [aeif-dataset.eu](https://aeif-dataset.github.io/)
+Dev-Kit for records collected during [Project AMEISE](https://ameise.wandelgesellschaft.de/). Visit our CoopScenes Website at [CoopScenes.github.io](https://coopscenes.github.io/)
 
 ## Description
 
-The AEIF-dataset is a development kit for the AEIF dataset. It provides functionalities to unpack AMEISE record 
+CoopScenes is a development kit for the CoopScenes Dataset. It provides functionalities to unpack AMEISE record 
 files and extract meta information and frames. The core functionality revolves around handling AMEISE record files 
 with the .4mse extension.
 
