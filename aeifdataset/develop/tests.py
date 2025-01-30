@@ -128,29 +128,24 @@ def format_to_4x4_matrix(line_content: str) -> np.ndarray:
 if __name__ == '__main__':
     # save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
     # dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_1")
-    frame_num = 1
-    assert frame_num >= 1
-    frame = ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_4/id02322_2024-10-12_11-48-23.4mse')[
-        frame_num]
-    frame2 = ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_4/id02322_2024-10-12_11-48-23.4mse')[
-        frame_num + 1]
-    frame3 = ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_4/id02322_2024-10-12_11-48-23.4mse')[
-        frame_num + 2]
-    tf = ad.get_transformation(frame.vehicle.info)
-    tf2 = ad.get_transformation(frame2.vehicle.info)
-    tf3 = ad.get_transformation(frame.vehicle.lidars.LEFT)
+    example_record_1 = ad.DataRecord("example_record_1.4mse")
+    frame = example_record_1[0]
+    lidar = frame.tower.lidars.UPPER_PLATFORM
+    camera = frame.vehicle.cameras.STEREO_LEFT
+    xyz_without_hidden, mask = ad.remove_hidden_points(lidar=lidar, camera=camera, vehicle_info=frame.vehicle.info, return_mask=True)
 
-    tf4 = tf3.combine_transformation(tf.combine_transformation(tf2.invert_transformation())).combine_transformation(
-        tf3.invert_transformation())
+    points = lidar._points_raw
+    fields = ['intensity', 't', 'reflectivity', 'ring', 'ambient']
+    points_additional = np.stack([lidar[field] for field in fields], axis=-1)
+    filtered_add_points = points_additional[mask]
+    combined_data = np.hstack((xyz_without_hidden, filtered_add_points))
+    points_structured_without_hidden = np.array([tuple(row) for row in combined_data],
+                                          dtype=np.dtype(LidarInformation._os_dtype_structure()))
 
-    lidar_points = frame.vehicle.lidars.LEFT
-
-    lidar_points.info.set_motion_transform(tf4.mtx)
-
-    image = ad.get_projection_img(frame.vehicle.cameras.STEREO_LEFT,
-                                  lidar_points)
-
-    image.show()
+    #lidar._points_deskewd = points_structured_without_hidden
+    _, proj = ad.get_projection(lidar, camera, frame.vehicle.info)
+    proj_img = ad.plot_points_on_image(camera.image.image.copy(), proj, _)
+    proj_img.show()
 
     """
     def _get_timestamps(points):
