@@ -16,8 +16,8 @@ Each class provides methods to serialize and deserialize the sensor data, enabli
 transfer and storage of complex sensor setups in a compact binary format.
 """
 from typing import Optional
-from aeifdataset.data import Camera, Lidar, IMU, GNSS, Dynamics, VehicleInformation, TowerInformation
-from aeifdataset.miscellaneous import serialize, deserialize, INT_LENGTH, obj_to_bytes, obj_from_bytes, read_data_block
+from coopscenes.data import Camera, Lidar, IMU, GNSS, Dynamics, VehicleInformation, TowerInformation
+from coopscenes.miscellaneous import serialize, deserialize, INT_LENGTH, obj_to_bytes, obj_from_bytes, read_data_block
 
 
 class VisionSensorsVeh:

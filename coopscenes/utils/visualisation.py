@@ -20,8 +20,8 @@ import importlib.util
 import numpy as np
 import matplotlib.pyplot as plt
 
-from aeifdataset.data import Lidar, Camera, LidarInformation, VehicleInformation, Frame, Vehicle, Tower
-from aeifdataset.utils import get_projection, get_disparity_map, transform_points_to_origin
+from coopscenes.data import Lidar, Camera, LidarInformation, VehicleInformation, Frame, Vehicle, Tower
+from coopscenes.utils import get_projection, get_disparity_map, transform_points_to_origin
 
 
 def get_colored_stereo_image(camera_left: Camera, camera_right: Camera, cmap_name: str = "viridis",

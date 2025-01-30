@@ -21,7 +21,7 @@ in autonomous vehicle systems.
 from typing import Tuple, Optional, Dict, List
 import numpy as np
 
-from aeifdataset.miscellaneous import ReprFormaterMixin
+from coopscenes.miscellaneous import ReprFormaterMixin
 
 
 class ROI:

@@ -14,10 +14,10 @@ Functions:
     get_timestamp: Converts the frame's timestamp to a formatted UTC string with specified precision.
 """
 from decimal import Decimal
-from aeifdataset.miscellaneous import obj_to_bytes, obj_from_bytes, read_data_block, compute_checksum, \
+from coopscenes.miscellaneous import obj_to_bytes, obj_from_bytes, read_data_block, compute_checksum, \
     ChecksumError, TimestampMixin, ReprFormaterMixin
-from aeifdataset.data import Tower, Vehicle, VisionSensorsVeh, VisionSensorsTow, LaserSensorsVeh, LaserSensorsTow
-from aeifdataset.miscellaneous.helper import read_checksum
+from coopscenes.data import Tower, Vehicle, VisionSensorsVeh, VisionSensorsTow, LaserSensorsVeh, LaserSensorsTow
+from coopscenes.miscellaneous.helper import read_checksum
 
 
 class Frame(TimestampMixin, ReprFormaterMixin):

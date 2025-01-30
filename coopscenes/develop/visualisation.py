@@ -4,8 +4,8 @@ import pypatchworkpp
 import numpy as np
 import open3d as o3d
 
-from aeifdataset.data import Lidar, Camera
-from aeifdataset.utils import get_projection_img, get_transformation, Transformation
+from coopscenes.data import Lidar, Camera
+from coopscenes.utils import get_projection_img, get_transformation, Transformation
 
 
 def show_tf_correction(camera: Camera,

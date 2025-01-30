@@ -15,8 +15,8 @@ Functions:
 """
 from typing import Union, Tuple, Optional
 
-from aeifdataset import Points
-from aeifdataset.data import Lidar, Camera, IMU, GNSS, Dynamics, CameraInformation, LidarInformation, GNSSInformation, \
+from coopscenes import Points
+from coopscenes.data import Lidar, Camera, IMU, GNSS, Dynamics, CameraInformation, LidarInformation, GNSSInformation, \
     IMUInformation, DynamicsInformation, VehicleInformation, Vehicle
 from scipy.spatial.transform import Rotation as R
 import numpy as np

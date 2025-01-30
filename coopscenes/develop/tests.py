@@ -1,5 +1,5 @@
-import aeifdataset as ad
-# from aeifdataset.utils.transformation import apply_transformation_to_points
+import coopscenes as ad
+# from coopscenes.utils.transformation import apply_transformation_to_points
 
 import numpy as np
 import open3d as o3d
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     _, proj = ad.get_projection(lidar, camera, frame.vehicle.info)
     proj_img = ad.plot_points_on_image(camera.image.image.copy(), proj, _)
     proj_img.show()
-
+    """
     def _get_timestamps(points):
         points_ts = points['t']
         normalized_points_ts = (points_ts - points_ts.min()) / (points_ts.max() - points_ts.min())
@@ -321,4 +321,4 @@ if __name__ == '__main__':
     ad.show_tf_correction(image, points, -0.003, -0.01, -0.004)
     ad.get_projection_img(image, points).show()
     ad.get_projection_img(image2, points).show()
-    '''
+    """

@@ -13,8 +13,8 @@ Classes:
 from typing import List, Optional, Iterator, Union, Generator
 import os
 import glob
-from aeifdataset.data import *
-from aeifdataset.miscellaneous import InvalidFileTypeError, obj_to_bytes, obj_from_bytes, INT_LENGTH
+from coopscenes.data import *
+from coopscenes.miscellaneous import InvalidFileTypeError, obj_to_bytes, obj_from_bytes, INT_LENGTH
 
 
 class DataRecord:

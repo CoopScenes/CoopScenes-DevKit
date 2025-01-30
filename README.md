@@ -14,7 +14,7 @@ with the .4mse extension.
 
 To install the ameise-dataset, you can use pip:
 ```console
-pip install aeif-dataset
+pip install CoopScenes
 ```
 
 ## Getting Started

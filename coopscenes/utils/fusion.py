@@ -15,8 +15,8 @@ Functions:
 """
 from typing import Tuple, Union, Optional
 import numpy as np
-from aeifdataset.data import Lidar, Camera, Tower, Vehicle, Frame, VehicleInformation, LidarInformation
-from aeifdataset.utils import get_transformation, transform_points_to_origin
+from coopscenes.data import Lidar, Camera, Tower, Vehicle, Frame, VehicleInformation, LidarInformation
+from coopscenes.utils import get_transformation, transform_points_to_origin
 import importlib.util
 
 

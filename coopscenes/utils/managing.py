@@ -18,7 +18,7 @@ Functions:
 """
 from datetime import datetime
 import os
-from aeifdataset import Dataloader, Image
+from coopscenes import Dataloader, Image
 from typing import Union
 import multiprocessing as mp
 import sys

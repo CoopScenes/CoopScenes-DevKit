@@ -19,7 +19,7 @@ Functions:
     deserialize(data, cls, *args): Deserializes a byte stream into an object using the class's `from_bytes()` method.
 """
 from typing import Optional, Tuple
-from aeifdataset.miscellaneous import INT_LENGTH, SHA256_CHECKSUM_LENGTH
+from coopscenes.miscellaneous import INT_LENGTH, SHA256_CHECKSUM_LENGTH
 from decimal import Decimal
 from datetime import datetime, timedelta
 import numpy as np

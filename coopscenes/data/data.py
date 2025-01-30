@@ -18,7 +18,7 @@ data types, as well as utility functions like converting timestamps to human-rea
 from typing import Optional, Dict
 from decimal import Decimal
 from PIL import Image as PilImage
-from aeifdataset.miscellaneous import read_data_block, TimestampMixin, ReprFormaterMixin, Config
+from coopscenes.miscellaneous import read_data_block, TimestampMixin, ReprFormaterMixin, Config
 import numpy as np
 from io import BytesIO
 import zstandard as zstd

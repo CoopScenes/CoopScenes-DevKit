@@ -16,8 +16,8 @@ for accessing and manipulating the data, such as image rectification for cameras
 attribute access for lidar and IMU data.
 """
 from typing import List, Optional
-from aeifdataset.miscellaneous import serialize, deserialize, obj_to_bytes, obj_from_bytes, read_data_block
-from aeifdataset.data import Image, Points, Motion, Position, CameraInformation, LidarInformation, GNSSInformation, \
+from coopscenes.miscellaneous import serialize, deserialize, obj_to_bytes, obj_from_bytes, read_data_block
+from coopscenes.data import Image, Points, Motion, Position, CameraInformation, LidarInformation, GNSSInformation, \
     IMUInformation, Velocity, DynamicsInformation, Heading
 from PIL import Image as PilImage
 import numpy as np
@@ -54,7 +54,7 @@ class Camera:
         Raises:
             AttributeError: If the raw image data is not set.
         """
-        from aeifdataset.utils import get_rect_img
+        from coopscenes.utils import get_rect_img
         if self._image_raw is not None:
             return get_rect_img(self)
         raise AttributeError("Image is not set.")
@@ -128,7 +128,7 @@ class Lidar:
         Raises:
             AttributeError: If raw point cloud data is not set.
         """
-        from aeifdataset.utils import get_deskewed_points
+        from coopscenes.utils import get_deskewed_points
         if self._points_deskewd is None:
             if self._points_raw is not None:
                 self._points_deskewd = get_deskewed_points(self)
@@ -149,7 +149,7 @@ class Lidar:
             AttributeError: If the attribute does not exist or raw points are not set.
         """
         if self._points_deskewd is None:
-            from aeifdataset.utils import get_deskewed_points
+            from coopscenes.utils import get_deskewed_points
             if self._points_raw is not None:
                 self._points_deskewd = get_deskewed_points(self)
             else:

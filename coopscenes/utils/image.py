@@ -17,8 +17,8 @@ Functions:
 """
 from typing import Optional, Tuple, Union
 from PIL import Image as PilImage
-from aeifdataset.data import CameraInformation, Camera, Image
-from aeifdataset.utils import Transformation
+from coopscenes.data import CameraInformation, Camera, Image
+from coopscenes.utils import Transformation
 import numpy as np
 import cv2
 
