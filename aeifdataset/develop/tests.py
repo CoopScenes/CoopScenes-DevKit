@@ -127,50 +127,25 @@ def format_to_4x4_matrix(line_content: str) -> np.ndarray:
 
 if __name__ == '__main__':
     # save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
-    # dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_6")
+    # dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_1")
+    example_record_1 = ad.DataRecord("example_record_1.4mse")
+    frame = example_record_1[0]
+    lidar = frame.tower.lidars.UPPER_PLATFORM
+    camera = frame.vehicle.cameras.STEREO_LEFT
+    xyz_without_hidden, mask = ad.remove_hidden_points(lidar=lidar, camera=camera, vehicle_info=frame.vehicle.info, return_mask=True)
 
-    frame = ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_1/id00999_2024-09-27_10-35-41.4mse')[16]
+    points = lidar._points_raw
+    fields = ['intensity', 't', 'reflectivity', 'ring', 'ambient']
+    points_additional = np.stack([lidar[field] for field in fields], axis=-1)
+    filtered_add_points = points_additional[mask]
+    combined_data = np.hstack((xyz_without_hidden, filtered_add_points))
+    points_structured_without_hidden = np.array([tuple(row) for row in combined_data],
+                                          dtype=np.dtype(LidarInformation._os_dtype_structure()))
 
-    cameras = frame.vehicle.cameras
-    num_cameras = len(cameras)
-    import matplotlib.pyplot as plt
-
-    plt.figure(figsize=(60, 20))
-
-    # Iterate through the cameras and project the LiDAR points onto each image
-    projection = ad.get_projection_img(cameras.FRONT_LEFT, frame.tower, vehicle_info=frame.vehicle.info)
-    plt.imshow(projection)
-    plt.title('front_left')
-    plt.axis('off')
-
-    plt.tight_layout()
-    plt.show()
-
-    '''
-    for frame in ad.DataRecord('/mnt/hot_data/dataset/aeif/seq_6/id01442_2024-10-29_09-08-17.4mse')[5:25]:
-        
-        stereo_left = frame.vehicle.cameras.STEREO_LEFT
-        stereo_right = frame.vehicle.cameras.STEREO_RIGHT
-
-        # Retrieve disparity map from stereo images
-        disparity_map = ad.get_disparity_map(stereo_left, stereo_right)
-
-        # Generate a depth map from stereo images
-        depth_map = ad.get_depth_map(stereo_left, stereo_right)
-
-        # Alternatively, convert a disparity map to a depth map using camera parameters
-        depth_map = ad.disparity_to_depth(disparity_map, stereo_right.info)
-
-        image = frame.vehicle.cameras.STEREO_LEFT
-
-        proj_img = ad.get_projection_img(image, (frame.vehicle, (64, 200, 200)),
-                                         (frame.tower, (219, 48, 130)))
-        proj_img_2 = ad.get_projection_img(image, frame, min_range=0, max_range=35)
-
-        # ad.show_points((frame.vehicle, (64, 200, 200)), (frame.tower, (219, 48, 130)))
-        speed2 = np.linalg.norm(frame.vehicle.DYNAMICS.velocity[0].linear_velocity) * 3.6
-        print(speed2)
-        proj_img.show()
+    #lidar._points_deskewd = points_structured_without_hidden
+    _, proj = ad.get_projection(lidar, camera, frame.vehicle.info)
+    proj_img = ad.plot_points_on_image(camera.image.image.copy(), proj, _)
+    proj_img.show()
 
     def _get_timestamps(points):
         points_ts = points['t']

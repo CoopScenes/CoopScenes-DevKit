@@ -17,6 +17,7 @@ from typing import Tuple, Union, Optional
 import numpy as np
 from aeifdataset.data import Lidar, Camera, Tower, Vehicle, Frame, VehicleInformation, LidarInformation
 from aeifdataset.utils import get_transformation, transform_points_to_origin
+import importlib.util
 
 
 def get_projection(lidar: Lidar, camera: Camera, vehicle_info: Optional[VehicleInformation] = None) -> Tuple[
@@ -61,7 +62,7 @@ def get_projection(lidar: Lidar, camera: Camera, vehicle_info: Optional[VehicleI
     proj_mtx = camera.info.projection_mtx
 
     # Prepare points in homogeneous coordinates
-    points_3d = np.array([point.tolist()[:3] for point in lidar.points.points])
+    points_3d = np.array([point.tolist()[:3] for point in lidar.points])
     points_3d_homogeneous = np.hstack((points_3d, np.ones((points_3d.shape[0], 1))))
 
     # Transform points to camera coordinates
@@ -193,3 +194,55 @@ def combine_lidar_points(*args: Union[Frame, Tower, Vehicle, Lidar, Tuple[np.nda
 
     all_points = np.vstack(all_points)
     return all_points[:, :3]
+
+
+def remove_hidden_points(lidar: Lidar,
+                         camera: Camera,
+                         vehicle_info: Optional[VehicleInformation] = None,
+                         radius: int = 300000,
+                         return_mask: bool = False
+                         ) -> np.array:
+    """
+    Removes points that are in line of sight of a camera.
+    Args:
+        param: ['rm_los'] with field: radius
+        points: A numpy array containing structured data with fields 'x', 'y', 'z'.
+        camera_pose: Camera translation as a list of [x, y, z] to the LiDAR.
+    Returns:
+        filtered_points: A numpy array containing structured data with the same fields as 'points',
+        with the points that are in line of sight removed.
+    """
+    if importlib.util.find_spec("open3d") is None:
+        raise ImportError('Install open3d to use this function with: python -m pip install open3d')
+    import open3d as o3d
+
+    lidar_tf = get_transformation(lidar)
+    camera_tf = get_transformation(camera)
+
+    if lidar_tf.to != camera_tf.to:
+        if lidar_tf.to == "lidar_top":
+            if vehicle_info is None:
+                raise ValueError("vehicle_info must be provided when transforming between agents.")
+            vehicle_tf = get_transformation(vehicle_info)
+            lidar_tf = lidar_tf.combine_transformation(vehicle_tf)
+        elif camera_tf.to == "lidar_top":
+            if vehicle_info is None:
+                raise ValueError("vehicle_info must be provided when transforming between agents.")
+            vehicle_tf = get_transformation(vehicle_info)
+            camera_tf = camera_tf.combine_transformation(vehicle_tf)
+
+    lidar_to_cam_tf = lidar_tf.combine_transformation(camera_tf).mtx
+    camera_transition = lidar_to_cam_tf[:, -1]
+    camera_position = camera_transition[:3].reshape(3, 1)
+
+    # Manually extract x, y, z raw from the structured array
+    pcd = o3d.geometry.PointCloud()
+    xyz = np.vstack((lidar.points['x'], lidar.points['y'], lidar.points['z'])).T
+    pcd.points = o3d.utility.Vector3dVector(xyz)
+    _, pt_map = pcd.hidden_point_removal(camera_position, radius)
+    mask = np.zeros(len(np.asarray(xyz)), dtype=bool)
+    mask[pt_map] = True
+    filtered_points = xyz[mask]
+    if return_mask:
+        return filtered_points, mask
+    return filtered_points
