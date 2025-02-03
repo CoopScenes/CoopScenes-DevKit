@@ -14,7 +14,7 @@ setup(
     install_requires=requirements,
     python_requires='>=3.7',
     url='https://github.com/MarcelVSHNS/coopscenes.git',
-    license='Apache License 2.0',
+    license='MIT',
     author='Marcel und Alex',
     author_email='marcel.vosshans@hs-esslingen.de',
     description='Dev-Kit for CoopScenes',
