@@ -1,5 +1,5 @@
-# **CoopScenes Dataset**  
-🚗📡 **Multi-Scene Infrastructure and Vehicle Data for Advancing Collective Perception in Autonomous Driving**  
+# **CoopScenes** 🚗📡   
+**Multi-Scene Infrastructure and Vehicle Data for Advancing Collective Perception in Autonomous Driving**  
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Dataset](https://img.shields.io/badge/Dataset-527GB-green)](https://coopscenes.github.io/) [![Paper](https://img.shields.io/badge/Paper-ArXiv-orange)](https://arxiv.org/abs/2407.08261)  
 
