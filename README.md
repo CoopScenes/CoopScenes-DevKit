@@ -1,5 +1,5 @@
 # **CoopScenes Dataset**  
-🚗📡 **A Large-Scale Multi-Scene Dataset for Collective Perception and Urban Mobility Research**  
+🚗📡 **Multi-Scene Infrastructure and Vehicle Data for Advancing Collective Perception in Autonomous Driving**  
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Dataset](https://img.shields.io/badge/Dataset-527GB-green)](https://coopscenes.github.io/) [![Paper](https://img.shields.io/badge/Paper-ArXiv-orange)](https://arxiv.org/abs/2407.08261)  
 
@@ -20,7 +20,9 @@ machine learning and sensor fusion applications.
 ✔ **Total dataset size:** **527 GB** in **`.4mse`** format, accessible via our development kit  
 
 ## 📥 **Download**
-The dataset can be accessed via [official CoopScenes website](https://coopscenes.github.io/) and used with our development kit.
+The dataset can be accessed via official [CoopScenes](https://coopscenes.github.io/) website and used with our development kit.
+
+📢 **INFO:** The data will be fully published upon the official publication announcement.
 
 ## 🔧 **Installation & Usage**  
 To use the dataset, simply install our provided PyPi package:
