@@ -31,9 +31,10 @@ To use the dataset, simply install our provided PyPi package:
 ```
 
 ```bash
-    git clone git@github.com:MarcelVSHNS/CoopScenes.git
+    git clone https://github.com/MarcelVSHNS/CoopScenes.git
+    cd CoopScenes
     python -m venv venv # install with apt-get install python3-venv
-    source ./venv/bin/ activate
+    source venv/bin/activate
     pip install -r requirements.txt 
 ```
 
