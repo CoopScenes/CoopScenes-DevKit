@@ -59,11 +59,6 @@ You can find detailed examples in the [Colab](https://colab.research.google.com/
 ## 📜 **License**
 This dataset is released under the **[MIT License](LICENSE)**.
 
-## Acknowledgements
-![Ameise Logo](docs/Ameise_logo.png)
-
-We gratefully acknowledge the **Ministry of Transport of Baden-Württemberg** for funding the [AMEISE project](https://ameise.wandelgesellschaft.de/).
-
 ---
 
 **Enjoy using CoopScenes! 🚀**
