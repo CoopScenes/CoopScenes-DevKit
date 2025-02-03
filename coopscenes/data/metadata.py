@@ -20,6 +20,7 @@ in autonomous vehicle systems.
 """
 from typing import Tuple, Optional, Dict, List
 import numpy as np
+from markdown_it.rules_block import heading
 
 from coopscenes.miscellaneous import ReprFormaterMixin
 
@@ -468,4 +469,32 @@ class LidarInformation(ReprFormaterMixin):
         return {
             'names': ['x', 'y', 'z', 'intensity', 'point_time_offset'],
             'formats': ['<f4', '<f4', '<f4', '<u4', '<u4']
+        }
+
+
+class ImageLabels:
+    """
+    A class to represent image labels including 2D bounding boxes.
+
+    Attributes:
+        bbox_2d (Optional[np.array]): A structured NumPy array representing 2D bounding boxes.
+
+    Methods:
+        _2d_bounding_box(): Returns the dtype structure for a 2D bounding box.
+    """
+    def __init__(self,
+                 bbox_2d: Optional[np.array] = None):
+        """
+        Initializes the ImageLabels instance.
+
+        Args:
+            bbox_2d (Optional[np.array]): A structured NumPy array representing 2D bounding boxes.
+        """
+        self.bbox_2d = bbox_2d      # _2d_bounding_box
+
+    @staticmethod
+    def _2d_bounding_box() -> Dict[str, List]:
+        return {
+            'names': ['cx', 'cy', 'width', 'height', 'class', 'confidence'],
+            'formats': ['f4', 'f4', 'f4', 'f4', 'i4', 'f4']
         }

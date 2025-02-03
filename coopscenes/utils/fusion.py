@@ -203,22 +203,46 @@ def remove_hidden_points(lidar: Lidar,
                          return_mask: bool = False
                          ) -> np.array:
     """
-    Removes points that are in line of sight of a camera.
+    Removes points from a LiDAR point cloud that are occluded from a given camera's perspective.
+
+    This function uses Open3D's hidden point removal to filter out points that are not visible
+    from the camera's location. It transforms the LiDAR points into the camera frame before
+    applying the occlusion filter.
+
     Args:
-        param: ['rm_los'] with field: radius
-        points: A numpy array containing structured data with fields 'x', 'y', 'z'.
-        camera_pose: Camera translation as a list of [x, y, z] to the LiDAR.
+        lidar (Lidar): The LiDAR sensor object containing the point cloud data.
+        camera (Camera): The camera sensor object used for occlusion checking.
+        vehicle_info (Optional[VehicleInformation], optional): Vehicle transformation information
+            required if the LiDAR and camera belong to different reference frames. Defaults to None.
+        radius (int, optional): The radius of the hidden point removal operation, determining
+            the occlusion threshold. Defaults to 300000.
+        return_mask (bool, optional): Whether to return the boolean mask indicating
+            which points were retained. Defaults to False.
+
     Returns:
-        filtered_points: A numpy array containing structured data with the same fields as 'points',
-        with the points that are in line of sight removed.
+        np.array: The filtered LiDAR points that are visible from the camera.
+        If `return_mask` is True, returns a tuple:
+            - np.array: Filtered LiDAR points.
+            - np.array: Boolean mask of retained points.
+
+    Raises:
+        ImportError: If the `open3d` package is not installed.
+        ValueError: If `vehicle_info` is required for transformation but not provided.
+
+    Example:
+        ```python
+        filtered_points = remove_hidden_points(lidar, camera, vehicle_info=vehicle, radius=100000)
+        ```
     """
     if importlib.util.find_spec("open3d") is None:
         raise ImportError('Install open3d to use this function with: python -m pip install open3d')
     import open3d as o3d
 
+    # Get transformations for lidar and camera
     lidar_tf = get_transformation(lidar)
     camera_tf = get_transformation(camera)
 
+    # Handle transformation between different reference frames
     if lidar_tf.to != camera_tf.to:
         if lidar_tf.to == "lidar_top":
             if vehicle_info is None:
@@ -231,18 +255,22 @@ def remove_hidden_points(lidar: Lidar,
             vehicle_tf = get_transformation(vehicle_info)
             camera_tf = camera_tf.combine_transformation(vehicle_tf)
 
+    # Compute transformation matrix from LiDAR to camera
     lidar_to_cam_tf = lidar_tf.combine_transformation(camera_tf).mtx
     camera_transition = lidar_to_cam_tf[:, -1]
     camera_position = camera_transition[:3].reshape(3, 1)
 
-    # Manually extract x, y, z raw from the structured array
+    # Convert LiDAR structured array into a point cloud format for Open3D
     pcd = o3d.geometry.PointCloud()
     xyz = np.vstack((lidar.points['x'], lidar.points['y'], lidar.points['z'])).T
     pcd.points = o3d.utility.Vector3dVector(xyz)
+
+    # Apply hidden point removal
     _, pt_map = pcd.hidden_point_removal(camera_position, radius)
     mask = np.zeros(len(np.asarray(xyz)), dtype=bool)
     mask[pt_map] = True
     filtered_points = xyz[mask]
+
     if return_mask:
         return filtered_points, mask
     return filtered_points

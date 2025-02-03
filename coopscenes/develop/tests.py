@@ -7,8 +7,7 @@ from math import radians, cos, sqrt
 from decimal import Decimal
 from kiss_icp.preprocess import get_preprocessor
 from kiss_icp.config import KISSConfig
-
-from build.lib.aeifdataset import LidarInformation
+import h5py
 
 
 def filter_points(points, x_range, y_range, z_range):
@@ -126,6 +125,7 @@ def format_to_4x4_matrix(line_content: str) -> np.ndarray:
 
 
 if __name__ == '__main__':
+    """
     # save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
     # dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_1")
     example_record_1 = ad.DataRecord("example_record_1.4mse")
@@ -146,6 +146,7 @@ if __name__ == '__main__':
     _, proj = ad.get_projection(lidar, camera, frame.vehicle.info)
     proj_img = ad.plot_points_on_image(camera.image.image.copy(), proj, _)
     proj_img.show()
+    """
     """
     def _get_timestamps(points):
         points_ts = points['t']

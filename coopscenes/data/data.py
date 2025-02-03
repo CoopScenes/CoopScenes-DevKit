@@ -15,10 +15,11 @@ Classes:
 Each class provides methods for initializing, serializing, and deserializing their respective
 data types, as well as utility functions like converting timestamps to human-readable formats.
 """
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from decimal import Decimal
 from PIL import Image as PilImage
-from coopscenes.miscellaneous import read_data_block, TimestampMixin, ReprFormaterMixin, Config
+from coopscenes.miscellaneous import read_data_block, TimestampMixin, ReprFormaterMixin, Config, obj_to_bytes, obj_from_bytes
+from coopscenes.data import ImageLabels
 import numpy as np
 from io import BytesIO
 import zstandard as zstd
@@ -232,17 +233,21 @@ class Image(TimestampMixin):
     Attributes:
         timestamp (Optional[Decimal]): Timestamp of the image.
         image (Optional[PilImage]): The actual image data.
+        labels (Optional[ImageLabels]): The labels associated with the image.
     """
 
-    def __init__(self, image: PilImage = None, timestamp: Optional[Decimal] = None):
-        """Initialize an Image object with image data and a timestamp.
+    def __init__(self, image: PilImage = None, timestamp: Optional[Decimal] = None,
+                 labels: Optional[ImageLabels] = None):
+        """Initialize an Image object with image data, a timestamp and the corresponding labels.
 
         Args:
             image (Optional[PilImage]): The image data.
             timestamp (Optional[Decimal]): Timestamp of the image.
+            labels (Optional[ImageLabels]): The labels associated with the image.
         """
         self.image = image
         self.timestamp = timestamp
+        self.labels = labels
 
     def __getattr__(self, attr) -> PilImage:
         """
@@ -271,10 +276,11 @@ class Image(TimestampMixin):
             encoded_img = img_byte_arr.getvalue()
 
         encoded_ts = str(self.timestamp).encode('utf-8')
+        lbl_len, encoded_labels = obj_to_bytes(self.labels)
         img_len = len(encoded_img).to_bytes(4, 'big')
         ts_len = len(encoded_ts).to_bytes(4, 'big')
 
-        return img_len + encoded_img + ts_len + encoded_ts
+        return img_len + encoded_img + ts_len + encoded_ts + lbl_len + encoded_labels
 
     @classmethod
     def from_bytes(cls, data: bytes) -> 'Image':
@@ -286,10 +292,12 @@ class Image(TimestampMixin):
             Image: The deserialized Image object.
         """
         img_bytes, data = read_data_block(data)
-        ts_bytes, _ = read_data_block(data)
+        ts_bytes, data = read_data_block(data)
+        lbl_bytes, _ = read_data_block(data)
 
         img_instance = cls()
         img_instance.timestamp = Decimal(ts_bytes.decode('utf-8'))
+        img_instance.labels = obj_from_bytes(lbl_bytes)
 
         if Config.REPACK:
             img_instance._img_bytes = img_bytes
