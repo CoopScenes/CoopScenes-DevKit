@@ -1,4 +1,4 @@
-import coopscenes as ad
+import coopscenes as cs
 # from coopscenes.utils.transformation import apply_transformation_to_points
 
 import numpy as np
@@ -7,7 +7,6 @@ from math import radians, cos, sqrt
 from decimal import Decimal
 from kiss_icp.preprocess import get_preprocessor
 from kiss_icp.config import KISSConfig
-import h5py
 
 
 def filter_points(points, x_range, y_range, z_range):
@@ -125,11 +124,33 @@ def format_to_4x4_matrix(line_content: str) -> np.ndarray:
 
 
 if __name__ == '__main__':
-    """
     # save_dir = '/mnt/dataset/anonymisation/validation/27_09_seq_1/png'
-    # dataset = ad.Dataloader("/mnt/hot_data/dataset/seq_1")
-    example_record_1 = ad.DataRecord("example_record_1.4mse")
-    frame = example_record_1[0]
+    dataset = cs.Dataloader("/mnt/hot_data/dataset/coopscenes/seq_1")
+    # example_record_1 = cs.DataRecord("example_record_1.4mse")
+    frame = dataset[0][0]
+    lidar_1 = frame.tower.lidars.VIEW_1
+    lidar_2 = frame.tower.lidars.VIEW_2
+
+    # Create a Transformation object for lidar_1 (transforms to the agent's origin)
+    lidar_1_transformation = cs.get_transformation(lidar_1)
+    print(lidar_1_transformation)
+
+    # Retrieve the transformation matrix, translation or rotation (rpy)
+    lidar_1_transformation_matrix = lidar_1_transformation.mtx
+    lidar_1_translation = lidar_1_transformation.translation
+    lidar_1_rotation = lidar_1_transformation.rotation
+
+    # Example: Calculate the transformation between two sensors (lidar_1 and lidar_2)
+    # First, get the transformation for lidar_2
+    lidar_2_transformation = cs.get_transformation(lidar_2)
+
+    # Get the inverse of the lidar_2 transformation (to go from the agent's origin to lidar_2)
+    lidar_2_inverse = lidar_2_transformation.invert_transformation()
+
+    # Combine transformations to compute lidar_1 -> lidar_2 transformation
+    lidar_1_to_2_transformation = lidar_1_transformation.combine_transformation(lidar_2_inverse)
+    print(lidar_1_to_2_transformation)
+    """
     lidar = frame.tower.lidars.UPPER_PLATFORM
     camera = frame.vehicle.cameras.STEREO_LEFT
     xyz_without_hidden, mask = ad.remove_hidden_points(lidar=lidar, camera=camera, vehicle_info=frame.vehicle.info, return_mask=True)

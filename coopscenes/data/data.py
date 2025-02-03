@@ -18,7 +18,8 @@ data types, as well as utility functions like converting timestamps to human-rea
 from typing import Optional, Dict, List
 from decimal import Decimal
 from PIL import Image as PilImage
-from coopscenes.miscellaneous import read_data_block, TimestampMixin, ReprFormaterMixin, Config, obj_to_bytes, obj_from_bytes
+from coopscenes.miscellaneous import read_data_block, TimestampMixin, ReprFormaterMixin, Config, obj_to_bytes, \
+    obj_from_bytes
 from coopscenes.data import ImageLabels
 import numpy as np
 from io import BytesIO
@@ -276,11 +277,10 @@ class Image(TimestampMixin):
             encoded_img = img_byte_arr.getvalue()
 
         encoded_ts = str(self.timestamp).encode('utf-8')
-        lbl_len, encoded_labels = obj_to_bytes(self.labels)
         img_len = len(encoded_img).to_bytes(4, 'big')
         ts_len = len(encoded_ts).to_bytes(4, 'big')
 
-        return img_len + encoded_img + ts_len + encoded_ts + lbl_len + encoded_labels
+        return img_len + encoded_img + ts_len + encoded_ts + obj_to_bytes(self.labels)
 
     @classmethod
     def from_bytes(cls, data: bytes) -> 'Image':
