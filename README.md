@@ -8,6 +8,7 @@ The **CoopScenes dataset** is a large-scale, multi-scene dataset designed to sup
 real-time sensor registration, and cooperative intelligent systems** for urban mobility. The dataset features **synchronized 
 multi-sensor data** from both an ego-vehicle and infrastructure sensors, providing researchers with high-quality data for
 machine learning and sensor fusion applications.
+![Sample Frame](docs/frame_sample.png)
 
 ### 📌 **Key Features**  
 ✔ **104 minutes of synchronized data** at **10 Hz**, totaling **62,000 frames**  
@@ -57,6 +58,8 @@ You can find detailed examples in the [Colab](https://colab.research.google.com/
 This dataset is released under the **[MIT License](LICENSE)**.
 
 ## Acknowledgements
+![Ameise Logo](docs/Ameise_logo.png)
+
 We gratefully acknowledge the **Ministry of Transport of Baden-Württemberg** for funding the [AMEISE project](https://ameise.wandelgesellschaft.de/).
 
 ---
