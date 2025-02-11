@@ -56,7 +56,7 @@ def get_rect_img(data: Union[Camera, Tuple[Image, CameraInformation]], performan
 
     rectified_image = cv2.remap(np.array(image.image), mapx, mapy, interpolation=interpolation_algorithm)
 
-    return Image(PilImage.fromarray(rectified_image), image.timestamp)
+    return Image(PilImage.fromarray(rectified_image), image.timestamp, image.labels)
 
 
 def get_disparity_map(camera_left: Camera, camera_right: Camera,
