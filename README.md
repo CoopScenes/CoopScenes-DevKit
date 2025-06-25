@@ -8,7 +8,7 @@ The **CoopScenes dataset** is a large-scale, multi-scene dataset designed to sup
 real-time sensor registration, and cooperative intelligent systems** for urban mobility. The dataset features **synchronized 
 multi-sensor data** from both an ego-vehicle and infrastructure sensors, providing researchers with high-quality data for
 machine learning and sensor fusion applications.
-![Sample Frame](docs/frame_sample.png)
+![Sample Frame](docs/Coop-Scenes.png)
 
 ### 📌 **Key Features**  
 ✔ **104 minutes of synchronized data** at **10 Hz**, totaling **62,000 frames**  
