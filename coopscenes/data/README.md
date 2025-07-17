@@ -10,9 +10,7 @@
 | `vehicle`   | `Vehicle` | Vehicle sensor data.                                   |
 | `tower`     | `Tower`   | Tower sensor data.                                     |
 
--------------------------------------------------------------------
-
--------------------------------------------------------------------
+---
 
 # Agents
 
@@ -72,19 +70,17 @@
 | `VIEW_2`         | `Lidar`   | Second lidar view of the tower.                          |
 | `UPPER_PLATFORM` | `Lidar`   | Lidar sensor mounted on the upper platform of the tower. |
 
--------------------------------------------------------------------
-
--------------------------------------------------------------------
+---
 
 # Sensors
 
 ### Camera
 
-| Attribute    | Data Type           | Description                                  |
-|--------------|---------------------|----------------------------------------------|
-| `info`       | `CameraInformation` | Metadata about the camera.                   |
-| `_image_raw` | `Image`             | Raw image data captured by the camera.       |
-| `image`      | `Image`             | Rectified image data captured by the camera. |
+| Attribute         | Data Type           | Description                                                                 |
+|-------------------|---------------------|-----------------------------------------------------------------------------|
+| `info`            | `CameraInformation` | Metadata about the camera.                                                  |
+| `_image_raw`      | `Image`             | Raw image data captured by the camera.                                      |
+| `image`           | `Image`             | Rectified image data captured by the camera.                                |
 
 ### Lidar
 
@@ -115,78 +111,68 @@
 | `velocity` | `List[Velocity]`      | Velocity data of the vehicle.       |
 | `heading`  | `List[Heading]`       | Heading information of the vehicle. |
 
--------------------------------------------------------------------
-
--------------------------------------------------------------------
+---
 
 # Data
 
 ## Metadata
 
-### Vehicle Information
+### VehicleInformation
 
-| Attribute    | Data Type        | Description                                                               |
-|--------------|------------------|---------------------------------------------------------------------------|
-| `model_name` | `str`            | Model name of the vehicle.                                                |
-| `extrinsic`  | `Optional[Pose]` | The extrinsic pose of the TOP Lidar relative to the UPPER_PLATFORM Lidar. |
+| Attribute    | Data Type        | Description                                      |
+|--------------|------------------|--------------------------------------------------|
+| `model_name` | `str`            | Model name of the vehicle.                       |
+| `extrinsic`  | `Optional[np.ndarray]` | Extrinsic pose relative to TOP Lidar.    |
+| `height`     | `Optional[np.ndarray]` | Height of TOP Lidar above ground.        |
 
 ### TowerInformation
 
-| Attribute    | Data Type        | Description                                                               |
-|--------------|------------------|---------------------------------------------------------------------------|
-| `model_name` | `str`            | Model name of the tower.                                                  |
-| `extrinsic`  | `Optional[Pose]` | The extrinsic pose of the UPPER_PLATFORM Lidar relative to the TOP Lidar. |
+| Attribute    | Data Type        | Description                                             |
+|--------------|------------------|---------------------------------------------------------|
+| `model_name` | `str`            | Model name of the tower.                                |
+| `height`     | `Optional[np.ndarray]` | Height of UPPER_PLATFORM Lidar above ground.     |
 
-### Camera Information
+### CameraInformation
 
-| Attribute            | Data Type         | Description                                                                                                                  |
-|----------------------|-------------------|------------------------------------------------------------------------------------------------------------------------------|
-| `name`               | `str`             | Name of the camera.                                                                                                          |
-| `model_name`         | `str`             | Model name of the camera.                                                                                                    |
-| `shape`              | `Tuple[int, int]` | Image resolution (width, height).                                                                                            |
-| `distortion_type`    | `str`             | Type of lens distortion.                                                                                                     |
-| `camera_mtx`         | `np.array`        | Intrinsic camera matrix.                                                                                                     |
-| `distortion_mtx`     | `np.array`        | Distortion coefficients.                                                                                                     |
-| `rectification_mtx`  | `np.array`        | Rectification matrix.                                                                                                        |
-| `projection_mtx`     | `np.array`        | Projection matrix.                                                                                                           |
-| `region_of_interest` | `ROI`             | Region of interest within the image.                                                                                         |
-| `focal_length`       | `int`             | Focal length of the camera in mm.                                                                                            |
-| `extrinsic`          | `Optional[Pose]`  | The extrinsic pose of the Camera sensor relative to the TOP Lidar for the vehicle or the UPPER_PLATFORM Lidar for the tower. |
+| Attribute         | Data Type         | Description                                             |
+|-------------------|-------------------|---------------------------------------------------------|
+| `name`            | `str`             | Name of the camera.                                     |
+| `model_name`      | `str`             | Model name of the camera.                               |
+| `shape`           | `Tuple[int, int]` | Image resolution (width, height).                       |
+| `distortion_type` | `str`             | Type of lens distortion.                                |
+| `camera_mtx`      | `np.ndarray`      | Intrinsic camera matrix.                                |
+| `distortion_mtx`  | `np.ndarray`      | Distortion coefficients.                                |
+| `rectification_mtx`| `np.ndarray`     | Rectification matrix.                                   |
+| `projection_mtx`  | `np.ndarray`      | Projection matrix.                                      |
+| `region_of_interest` | `ROI`          | Region of interest within the image.                    |
+| `camera_type`     | `str`             | Camera type (e.g. monocular, stereo).                   |
+| `focal_length`    | `int`             | Focal length in mm.                                     |
+| `aperture`        | `int`             | Aperture size in mm.                                    |
+| `exposure_time`   | `int`             | Exposure time in microseconds.                          |
+| `extrinsic`       | `np.ndarray`      | Extrinsic pose relative to TOP/UPPER_PLATFORM Lidar.    |
+| `stereo_transform`| `np.ndarray`      | Extrinsic pose of STEREO_LEFT relative to STEREO_RIGHT. |
 
 ### LidarInformation
 
-| Attribute                        | Data Type            | Description                                                                                                                 |
-|----------------------------------|----------------------|-----------------------------------------------------------------------------------------------------------------------------|
-| `name`                           | `str`                | The name of the Lidar sensor.                                                                                               |
-| `model_name`                     | `Optional[str]`      | The model name of the Lidar sensor.                                                                                         |
-| `extrinsic`                      | `Optional[Pose]`     | The extrinsic pose of the Lidar sensor relative to the TOP Lidar for the vehicle or the UPPER_PLATFORM Lidar for the tower. |
-| `vertical_fov`                   | `Optional[float]`    | The vertical field of view of the Lidar (for Blickfeld sensors).                                                            |
-| `horizontal_fov`                 | `Optional[float]`    | The horizontal field of view of the Lidar (for Blickfeld sensors).                                                          |
-| `beam_altitude_angles`           | `Optional[np.array]` | Beam altitude angles (for Ouster sensors).                                                                                  |
-| `beam_azimuth_angles`            | `Optional[np.array]` | Beam azimuth angles (for Ouster sensors).                                                                                   |
-| `lidar_origin_to_beam_origin_mm` | `Optional[np.array]` | Distance from the Lidar origin to the beam origin in mm (for Ouster sensors).                                               |
-| `horizontal_scanlines`           | `Optional[int]`      | The number of horizontal scanlines (for Ouster sensors).                                                                    |
-| `vertical_scanlines`             | `Optional[int]`      | The number of vertical scanlines (for Ouster sensors).                                                                      |
-| `phase_lock_offset`              | `Optional[int]`      | The phase lock offset (for Ouster sensors).                                                                                 |
-| `lidar_to_sensor_transform`      | `Optional[np.array]` | Transformation matrix from the Lidar frame to the sensor frame (for Ouster sensors).                                        |
-| `horizontal_angle_spacing`       | `Optional[float]`    | The horizontal angle spacing of the Lidar (for Blickfeld sensors).                                                          |
-| `frame_mode`                     | `Optional[str]`      | The frame mode of the Lidar (for Blickfeld sensors).                                                                        |
-| `scan_pattern`                   | `Optional[str]`      | The scan pattern of the Lidar (for Blickfeld sensors).                                                                      |
-| `dtype`                          | `np.dtype`           | Data type structure of the Lidar point cloud data.                                                                          |
-
-### IMUInformation
-
-| Attribute    | Data Type        | Description                                                                     |
-|--------------|------------------|---------------------------------------------------------------------------------|
-| `model_name` | `str`            | Model name of the IMU sensor.                                                   |
-| `extrinsic`  | `Optional[Pose]` | The extrinsic pose of the IMU sensor relative to the TOP Lidar for the vehicle. |
-
-### GNSSInformation
-
-| Attribute    | Data Type        | Description                                                                      |
-|--------------|------------------|----------------------------------------------------------------------------------|
-| `model_name` | `str`            | Model name of the GNSS sensor.                                                   |
-| `extrinsic`  | `Optional[Pose]` | The extrinsic pose of the GNSS sensor relative to the TOP Lidar for the vehicle. |
+| Attribute                        | Data Type            | Description                                                    |
+|----------------------------------|----------------------|----------------------------------------------------------------|
+| `name`                           | `str`                | Name of the Lidar sensor.                                      |
+| `model_name`                     | `str`                | Model name of the Lidar sensor.                                |
+| `extrinsic`                      | `np.ndarray`         | Extrinsic pose relative to TOP/UPPER_PLATFORM Lidar.           |
+| `vertical_fov`                   | `float`              | Vertical FoV (Blickfeld).                                      |
+| `horizontal_fov`                 | `float`              | Horizontal FoV (Blickfeld).                                    |
+| `horizontal_angle_spacing`       | `float`              | Horizontal angle spacing (Blickfeld).                          |
+| `frame_mode`                     | `str`                | Frame mode (Blickfeld).                                        |
+| `scan_pattern`                   | `str`                | Scan pattern (Blickfeld).                                      |
+| `beam_altitude_angles`           | `np.ndarray`         | Altitude angles (Ouster).                                      |
+| `beam_azimuth_angles`            | `np.ndarray`         | Azimuth angles (Ouster).                                       |
+| `lidar_origin_to_beam_origin_mm` | `np.ndarray`         | Distance from Lidar to beam origin (Ouster).                   |
+| `horizontal_scanlines`           | `int`                | Horizontal scanlines (Ouster).                                 |
+| `vertical_scanlines`             | `int`                | Vertical scanlines (Ouster).                                   |
+| `phase_lock_offset`              | `int`                | Phase lock offset (Ouster).                                    |
+| `lidar_to_sensor_transform`      | `np.ndarray`         | Transform from Lidar to Sensor (Ouster).                       |
+| `motion_transform`               | `np.ndarray`         | Motion compensation transform (Ouster).                        |
+| `dtype`                          | `np.dtype`           | Data type structure of the point cloud.                        |
 
 ### DynamicsInformation
 
@@ -195,76 +181,38 @@
 | `velocity_source` | `str`     | Source of velocity data. |
 | `heading_source`  | `str`     | Source of heading data.  |
 
--------------------------------------------------------------------
+---
 
 ## Sensor Data
 
 ### Image
 
-| Attribute   | Data Type   | Description                            |
-|-------------|-------------|----------------------------------------|
-| `timestamp` | `Decimal`   | Timestamp when the image was captured. |
-| `image`     | `PIL.Image` | The image data.                        |
+| Attribute   | Data Type     | Description                                  |
+|-------------|---------------|----------------------------------------------|
+| `timestamp` | `Decimal`     | Timestamp when the image was captured.       |
+| `image`     | `PIL.Image`   | The image data.                              |
+| `labels`    | `ImageLabels` | Optional labels, e.g., bounding boxes.       |
 
 ### Points
 
 | Attribute   | Data Type  | Description                                |
 |-------------|------------|--------------------------------------------|
-| `points`    | `np.array` | Array of 3D points (x, y, z).              |
+| `points`    | `np.array` | Array of 3D points or structured array.    |
 | `timestamp` | `Decimal`  | Timestamp associated with the point cloud. |
 
-### Motion
+### ImageLabels
 
-| Attribute                        | Data Type  | Description                            |
-|----------------------------------|------------|----------------------------------------|
-| `timestamp`                      | `Decimal`  | Timestamp of the motion data.          |
-| `orientation`                    | `np.array` | Orientation vector.                    |
-| `orientation_covariance`         | `np.array` | Covariance of the orientation.         |
-| `angular_velocity`               | `np.array` | Angular velocity vector.               |
-| `angular_velocity_covariance`    | `np.array` | Covariance of the angular velocity.    |
-| `linear_acceleration`            | `np.array` | Linear acceleration vector.            |
-| `linear_acceleration_covariance` | `np.array` | Covariance of the linear acceleration. |
+| Attribute | Data Type   | Description                                 |
+|-----------|-------------|---------------------------------------------|
+| `bbox_2d` | `np.array`  | Structured array of 2D bounding boxes.      |
 
-### Position
+### Motion / Velocity / Heading / Position
 
-| Attribute         | Data Type         | Description                        |
-|-------------------|-------------------|------------------------------------|
-| `timestamp`       | `Decimal`         | Timestamp of the position data.    |
-| `status`          | `str`             | Status of the GNSS signal.         |
-| `services`        | `Dict[str, bool]` | Status of satellite services.      |
-| `latitude`        | `Decimal`         | Latitude in decimal degrees.       |
-| `longitude`       | `Decimal`         | Longitude in decimal degrees.      |
-| `altitude`        | `Decimal`         | Altitude in meters.                |
-| `covariance`      | `np.array`        | Covariance matrix of the position. |
-| `covariance_type` | `str`             | Type of covariance.                |
+(Datenstruktur wie bisher – keine Änderungen notwendig)
 
-### Velocity
-
-| Attribute          | Data Type  | Description                        |
-|--------------------|------------|------------------------------------|
-| `timestamp`        | `Decimal`  | Timestamp of the velocity data.    |
-| `linear_velocity`  | `np.array` | Linear velocity vector.            |
-| `angular_velocity` | `np.array` | Angular velocity vector.           |
-| `covariance`       | `np.array` | Covariance matrix of the velocity. |
-
-### Heading
-
-| Attribute     | Data Type  | Description                       |
-|---------------|------------|-----------------------------------|
-| `timestamp`   | `Decimal`  | Timestamp of the heading data.    |
-| `orientation` | `np.array` | Orientation vector.               |
-| `covariance`  | `np.array` | Covariance matrix of the heading. |
-
--------------------------------------------------------------------
+---
 
 ## Misc
-
-### Pose
-
-| Attribute | Data Type  | Description                                            |
-|-----------|------------|--------------------------------------------------------|
-| `xyz`     | `np.array` | Position in the reference coordinate system (x, y, z). |
-| `rpy`     | `np.array` | Rotation in roll, pitch, and yaw (r, p, y).            |
 
 ### ROI (Region of Interest)
 
@@ -274,10 +222,3 @@
 | `y_offset` | `int`     | Y-coordinate of the top-left corner. |
 | `width`    | `int`     | Width of the ROI.                    |
 | `height`   | `int`     | Height of the ROI.                   |
-
-### TransformationMtx
-
-| Attribute     | Data Type  | Description                   |
-|---------------|------------|-------------------------------|
-| `rotation`    | `np.array` | Rotation matrix (3x3).        |
-| `translation` | `np.array` | Translation vector (x, y, z). |
