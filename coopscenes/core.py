@@ -74,8 +74,6 @@ class DataRecord:
             ValueError: If the frame index is out of range.
         """
         if isinstance(frame_index, int):
-            if frame_index < 0 or frame_index >= len(self.frame_lengths):
-                raise ValueError("Frame index out of range.")
             start_pos = sum(self.frame_lengths[:frame_index])
             end_pos = start_pos + self.frame_lengths[frame_index]
             return Frame.from_bytes(self.frames_data[start_pos:end_pos])
